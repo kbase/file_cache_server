@@ -1,0 +1,6 @@
+Flask==1.0.2
+gunicorn==19.9.0
+simplejson==3.16.0
+python-dotenv==0.8.2
+requests==2.19.1
+cerberus==1.2

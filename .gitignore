@@ -1,0 +1,10 @@
+# Environment variables
+.env
+
+# Caches and temp dirs
+build
+dist
+*.pyc
+.mypy_cache
+.cache
+tmp/*
