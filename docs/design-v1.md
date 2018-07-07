@@ -10,38 +10,43 @@ Provide a generalized cache store that can be used from any other service, allow
 
 To set a cache value, send a POST request with content-type "multipart/form-data" (to facilitate the file upload).
 
+The headers are:
+
+* `Authorization` - required - authentication token for the service
+
 The fields are:
 
-* `service` - required - name of the service
-* `token` - required - authentication token for the service
-* `params` - required - an arbitrary set of data used in the cache's namespace
+* `json` - required - json options (see below)
 * `file` - required - multipart form-data file to cache
+
+The JSON options are
+* `params` - required - an arbitrary set of data used in the cache's namespace
 * `expiration_days` - optional - total time in days until the cache's file gets deleted
 
 ```
-curl -i -X POST -H "Content-Type: multipart/form-data"
+curl -i -X POST
+  -H "Content-Type: multipart/form-data"
+  -H "Authorization: token"
   -F file=@/home/u/bio.zip
-  -F service=MyService
-  -F token=xyz
-  -F params="{..arbitrary_json_data..}"
-  -F expiration_days=30
+  -F json="{\"expiration_days\": 30, \"params\": {<arbitrary_json_data>}}"
   https://<caching_service_url>/v1/set
 ```
 
-If the cache succeeds, you will get back an empty 200 response.
+If the cache succeeds, you will get back a 200 response with JSON indicating whether the cache was
+created or updated (either `{"status": "created"}` or `{"status": "replaced"}`).
 
 If your auth token is invalid, you will receive a 403. Otherwise, there should be no errors.
 
 **_Request a cache value_**
 
 To fetch a cache value, make a POST request to `/v1/get` with content-type
-"application/x-www-form-urlencoded" and form fields for "service", "token", and "params".
+"application/json" and a field for "params":
 
 ```
-curl -i -X POST -H "Content-Type: application/x-www-form-urlencoded"
-  -F service=MyService
-  -F token=xyz
-  -F params="{..arbitrary_json_data..}"
+curl -i -X POST
+  -H "Content-Type: application/x-www-form-urlencoded"
+  -H "Authorization: token"
+  -d "{\"params\": {<arbitrary_json_data>}}"
   https://<caching_service_url>/v1/get
 ```
 
