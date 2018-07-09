@@ -20,7 +20,7 @@ The fields are:
 * `file` - required - multipart form-data file to cache
 
 The JSON options are
-* `params` - required - an arbitrary set of data used in the cache's namespace
+* `params` - required - an arbitrary set of data used to generate the cache identifier
 * `expiration_days` - optional - total time in days until the cache's file gets deleted
 
 ```
@@ -87,19 +87,19 @@ with cache(cache_params) as file:
 
 _Tools_
 
-* API stack: python, flask, and docker-compose
+* API stack: python, flask/gunicorn, and docker-compose
 * Caching: Redis
 * File storage: local at first, S3 or Minio later
 
 ### Cache location identifiers
 
-Cache values are identified by:
+Cache entries are identified by:
 
 * Service auth token
-* Arbitrary set of JSON data representing the environment, module, parameters, user ID, etc. of your
-  cache value. The consumer service that is using the caching service is responsible for this data structure.
+* Arbitrary set of identifying JSON data representing the environment, module, parameters, user ID, etc. of your
+  cache value.
 
-The above data are concatenated into a single string, hashed, and then stored in Redis. Each hash
+The above data are concatenated into a single string, hashed, and then used as a lookup in Redis. Each hash
 points to a file-path of the uploaded, cached file.
 
 A separate key/value association stores an expiration, if present.
