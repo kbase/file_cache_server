@@ -6,9 +6,11 @@ import unittest
 class TestHash(unittest.TestCase):
 
     def test_basic(self):
-        h = bhash('1234567890')
+        h1 = bhash('1234567890')
         expected = '807f1ba73147c3a96c2d63b38dd5a5f514f66290a1436bb9821e9f2a72eff263'
-        self.assertEqual(h, expected)
+        self.assertEqual(h1, expected)
+        h2 = bhash('1234567890')
+        self.assertEqual(h1, h2)
 
     def test_empty(self):
         with self.assertRaises(TypeError):
