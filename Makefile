@@ -16,3 +16,4 @@ test:
 	bandit -r caching_service
 	pydocstyle caching_service
 	pydocstyle app.py
+	python -m unittest discover test

@@ -5,7 +5,8 @@ COPY dev-requirements.txt /app/dev-requirements.txt
 WORKDIR /app
 
 # Install dependencies
-RUN apk --update add postgresql-dev make
+# GCC and libffi-dev are required for pynacl
+RUN apk --update add make gcc libffi-dev
 RUN apk --update add --virtual build-dependencies python-dev build-base && \
     pip install --upgrade pip && \
     pip install -r requirements.txt && \
