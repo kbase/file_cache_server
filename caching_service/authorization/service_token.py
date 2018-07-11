@@ -2,7 +2,7 @@
 import flask
 import functools
 
-from caching_service.api.exceptions import MissingHeader
+from caching_service.exceptions import MissingHeader
 
 
 def requires_service_token(fn):
