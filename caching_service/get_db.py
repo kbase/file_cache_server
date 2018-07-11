@@ -10,4 +10,4 @@ def get_db():
     with flask.current_app.app_context():
         if not hasattr(flask.g, 'db'):
             flask.g.db = plyvel.DB(Config.leveldb_path, create_if_missing=True)
-        return flask.g.db
+    return flask.g.db
