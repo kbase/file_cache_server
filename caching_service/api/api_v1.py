@@ -2,11 +2,12 @@
 import json
 import flask
 import minio.error
+import traceback
 
 from caching_service.authorization.service_token import requires_service_token
 from caching_service.cache_id.generate_cache_id import generate_cache_id
-import caching_service.api.exceptions as exceptions
-from caching_service.minio.main import download_file, upload_file
+import caching_service.exceptions as exceptions
+from caching_service.minio.main import download_file, upload_file, expire_entries, delete_entry
 
 api_v1 = flask.Blueprint('api_v1', __name__)
 
@@ -17,9 +18,10 @@ def root():
     resp = {
         'routes': {
             'root': 'GET /',
-            'get_cache_id': 'POST /cache_id',
+            'generate_cache_id': 'POST /cache_id',
             'download_cache_file': 'GET /cache/<cache_id>',
-            'upload_cache_file': 'POST /cache/<cache_id>'
+            'upload_cache_file': 'POST /cache/<cache_id>',
+            'delete_cache_file': 'DELETE /cache/<cache_id>'
         }
     }
     return flask.jsonify(resp)
@@ -27,13 +29,11 @@ def root():
 
 @requires_service_token
 @api_v1.route('/cache_id', methods=['POST'])
-def get_cache_id():
+def make_cache_id():
     """Generate a cache ID from identifying data."""
     check_content_type('application/json')
     token = flask.request.headers.get('Authorization')
-    json_body = get_json()
-    json_text = json.dumps(json_body, sort_keys=True)
-    cid = generate_cache_id(token, json_text)
+    cid = generate_cache_id(token, get_json())
     result = {'cache_id': cid, 'status': 'generated'}
     return flask.jsonify(result)
 
@@ -57,11 +57,25 @@ def upload_cache_file(cache_id):
     if not f.filename:
         result = {'status': 'error', 'error': 'filename missing'}
         return flask.jsonify(result)
-    path = '/tmp/' + cache_id
-    f.save(path)
-    upload_file(cache_id, path)
+    local_path = '/tmp/' + cache_id
+    f.save(local_path)
+    upload_file(cache_id, f.filename, local_path)
     result = {'status': 'saved'}
     return flask.jsonify({'status': 'saved'})
+
+
+@api_v1.route('/expire_all', methods=['POST'])
+def expire_all():
+    # TODO remove this endpoint
+    result = expire_entries()
+    return flask.jsonify(result)
+
+
+@api_v1.route('/cache/<cache_id>', methods=['DELETE'])
+def delete(cache_id):
+    # TODO remove this endpoint
+    delete_entry(cache_id)
+    return flask.jsonify({'status': 'deleted'})
 
 
 # Error handlers
@@ -69,15 +83,21 @@ def upload_cache_file(cache_id):
 
 @api_v1.errorhandler(exceptions.InvalidContentType)
 @api_v1.errorhandler(exceptions.MissingHeader)
-def invalid_content_type(err):
+def invalid_request(err):
     result = {'status': 'error', 'error': str(err)}
-    return (flask.jsonify(result), 422)
+    return (flask.jsonify(result), 400)
+
+
+@api_v1.errorhandler(exceptions.MissingCache)
+def missing_cache(err):
+    result = {'status': 'error', 'error': str(err)}
+    return (flask.jsonify(result), 404)
 
 
 @api_v1.errorhandler(json.decoder.JSONDecodeError)
 def invalid_json(err):
     result = {'status': 'error', 'error': 'JSON parsing error: ' + str(err)}
-    return (flask.jsonify(result), 422)
+    return (flask.jsonify(result), 400)
 
 
 @api_v1.errorhandler(minio.error.NoSuchKey)
@@ -91,7 +111,7 @@ def general_exception_handler(err):
     print('=' * 80)
     print('500 Unexpected Server Exception')
     print('-' * 80)
-    print(err)
+    traceback.print_exc()
     print('=' * 80)
     result = {'status': 'error', 'error': 'Unexpected server error.'}
     return (flask.jsonify(result), 500)
