@@ -24,3 +24,10 @@ def root():
             }
         }
     })
+
+
+@app.teardown_request
+def close_db(response):
+    """Close the leveldb connection when the request is complete."""
+    if hasattr(flask.g, 'db'):
+        flask.g.db.close()
