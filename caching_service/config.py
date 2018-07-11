@@ -13,3 +13,5 @@ class Config:
     minio_access_key = os.environ['MINIO_ACCESS_KEY']
     minio_secret_key = os.environ['MINIO_SECRET_KEY']
     minio_https = os.environ.get('MINIO_SECURE', False)
+    # LevelDB
+    leveldb_path = os.environ.get('LEVELDB_PATH', '/tmp/leveldb')
