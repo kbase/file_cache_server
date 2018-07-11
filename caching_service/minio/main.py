@@ -5,7 +5,7 @@ import os
 import shutil
 from werkzeug.utils import secure_filename
 
-from caching_service.db import open_db
+from caching_service.db import open_db, open_db_batch
 from caching_service.config import Config
 import caching_service.exceptions as exceptions
 
@@ -45,9 +45,9 @@ def upload_file(cache_id, file_storage):
     expiration = str(int(time.time() + thirty_days))
     filename_key = (filename_prefix + cache_id).encode()
     expiration_key = (expiration_prefix + cache_id).encode()
-    with open_db() as db:
-        db.put(filename_key, filename.encode())
-        db.put(expiration_key, expiration.encode())
+    with open_db_batch() as (db, batch):
+        batch.put(filename_key, filename.encode())
+        batch.put(expiration_key, expiration.encode())
     minio_path = cache_id + '/' + filename
     try:
         minio_client.fput_object(Config.minio_bucket_name, minio_path, path)
@@ -72,16 +72,15 @@ def delete_entry(cache_id):
     """Delete a cache entry in both leveldb and minio."""
     filename_key = (filename_prefix + cache_id).encode()
     expiry_key = (expiration_prefix + cache_id).encode()
-    with open_db() as db:
+    with open_db_batch() as (db, batch):
         filename_bytes = db.get(filename_key)
         if not filename_bytes:
             raise exceptions.MissingCache(cache_id)
         filename = db.get(filename_key).decode('utf-8')
         minio_path = cache_id + '/' + filename
         minio_client.remove_object(Config.minio_bucket_name, minio_path)
-        db.delete(filename_key)
-        db.delete(expiry_key)
-        db.close()
+        batch.delete(filename_key)
+        batch.delete(expiry_key)
 
 
 def get_cache_filename(cache_id):
