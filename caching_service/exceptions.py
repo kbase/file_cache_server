@@ -2,6 +2,7 @@
 
 
 class InvalidContentType(Exception):
+    """A value for a certain Content-Type header was invalid."""
 
     def __init__(self, invalid, correct):
         self.invalid = invalid
@@ -12,6 +13,7 @@ class InvalidContentType(Exception):
 
 
 class MissingHeader(Exception):
+    """A certain required header is completely missing from a request."""
 
     def __init__(self, header_name):
         self.header_name = header_name
@@ -21,6 +23,7 @@ class MissingHeader(Exception):
 
 
 class MissingCache(Exception):
+    """A cache entry with cache_id is missing when it was expected to exist."""
 
     def __init__(self, cache_id):
         self.cache_id = cache_id

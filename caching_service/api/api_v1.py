@@ -3,11 +3,17 @@ import json
 import flask
 import minio.error
 import traceback
+import shutil
 
 from caching_service.authorization.service_token import requires_service_token
 from caching_service.cache_id.generate_cache_id import generate_cache_id
 import caching_service.exceptions as exceptions
-from caching_service.minio.main import download_file, upload_file, expire_entries, delete_entry
+from caching_service.minio.main import (
+    download_file,
+    upload_file,
+    expire_entries,
+    delete_entry
+)
 
 api_v1 = flask.Blueprint('api_v1', __name__)
 
@@ -42,8 +48,14 @@ def make_cache_id():
 @api_v1.route('/cache/<cache_id>', methods=['GET'])
 def download_cache_file(cache_id):
     """Fetch a file given a cache ID."""
-    filepath = download_file(cache_id)
-    return flask.send_file(filepath)
+    (path, parent_dir) = download_file(cache_id)
+
+    @flask.after_this_request
+    def cleanup(response):
+        # Remove temporary files when the request is completed.
+        shutil.rmtree(parent_dir)
+        return response
+    return flask.send_file(path)
 
 
 @requires_service_token
@@ -51,16 +63,11 @@ def download_cache_file(cache_id):
 def upload_cache_file(cache_id):
     """Upload a file given a cache ID."""
     if 'file' not in flask.request.files:
-        result = {'status': 'error', 'error': 'file missing'}
-        return flask.jsonify(result)
+        return flask.jsonify({'status': 'error', 'error': 'File missing'})
     f = flask.request.files['file']
     if not f.filename:
-        result = {'status': 'error', 'error': 'filename missing'}
-        return flask.jsonify(result)
-    local_path = '/tmp/' + cache_id
-    f.save(local_path)
-    upload_file(cache_id, f.filename, local_path)
-    result = {'status': 'saved'}
+        return flask.jsonify({'status': 'error', 'error': 'Filename missing'})
+    upload_file(cache_id, f)
     return flask.jsonify({'status': 'saved'})
 
 

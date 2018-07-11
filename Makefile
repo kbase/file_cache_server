@@ -14,6 +14,4 @@ test:
 	python -m pyflakes caching_service
 	python -m pyflakes app.py
 	bandit -r caching_service
-	pydocstyle caching_service
-	pydocstyle app.py
 	python -m unittest discover test

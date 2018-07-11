@@ -1,3 +1,4 @@
+"""Global, static application configuration data stored in an object."""
 
 import os
 
@@ -14,4 +15,4 @@ class Config:
     minio_secret_key = os.environ['MINIO_SECRET_KEY']
     minio_https = os.environ.get('MINIO_SECURE', False)
     # LevelDB
-    leveldb_path = os.environ.get('LEVELDB_PATH', '/tmp/leveldb')
+    leveldb_path = os.environ['LEVELDB_PATH']
