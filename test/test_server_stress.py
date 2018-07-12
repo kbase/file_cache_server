@@ -5,7 +5,6 @@ This is for stress testing gunicorn, flask, leveldb, and minio with a lot of par
 with very large files.
 """
 
-import json
 import unittest
 import grequests
 import requests
@@ -25,6 +24,7 @@ class TestServerStress(unittest.TestCase):
 
     def setUp(self):
         self.base_url = 'http://web:5000'
+        self.token = os.environ['KBASE_AUTH_TOKEN']
 
     def test_large_files(self):
         """Test Minio by uploading a several very large files at once."""
@@ -35,39 +35,59 @@ class TestServerStress(unittest.TestCase):
         # Measure the time it takes to upload and delete a single 1gb file
         with open('large_file', 'rb') as f:
             files = {'file': f}
+            response = requests.post(
+                self.base_url + '/v1/cache_id',
+                headers={'Authorization': self.token, 'Content-Type': 'application/json'},
+                data='{"xyz": 123}'
+            )
+            cache_id = response.json()['cache_id']
             requests.post(
-                self.base_url + '/v1/cache/large_file',
+                self.base_url + '/v1/cache/' + cache_id,
                 files=files,
-                headers={'Authorization': 'xyz'}
+                headers={'Authorization': self.token}
             )
         requests.delete(
-            self.base_url + '/v1/cache/large_file',
-            headers={'Authorization': 'xyz'}
+            self.base_url + '/v1/cache/' + cache_id,
+            headers={'Authorization': self.token}
         )
         time_diff = time.time() - start
         print('Total time for one file: ' + str(time_diff))
-        # Measure the time it takes to upload four 1gb files at once
+        # Measure the time it takes to upload many 1gb files at once
         start = time.time()
-        reqs = []
+        reqs = []  # type: list
+        cache_ids = []  # type: list
         concurrent_files = 10
+        # Generate cache ids for each file
+        for idx in range(concurrent_files):
+            req = grequests.post(
+                self.base_url + '/v1/cache_id',
+                headers={'Authorization': self.token, 'Content-Type': 'application/json'},
+                data='{"xyz":"' + str(uuid4()) + '"}'
+            )
+            reqs.append(req)
+        responses = grequests.map(reqs, exception_handler=exception_handler)
+        cache_ids = list(map(lambda r: r.json()['cache_id'], responses))
+        reqs = []
+        # Upload many 1gb files at once
         with open('large_file', 'rb') as f:
             files = {'file': f}
-            for idx in range(concurrent_files):
+            for cache_id in cache_ids:
                 req = grequests.post(
-                    self.base_url + '/v1/cache/large_file' + str(idx),
+                    self.base_url + '/v1/cache/' + cache_id,
                     files=files,
-                    headers={'Authorization': 'xyz'}
+                    headers={'Authorization': self.token}
                 )
                 reqs.append(req)
             responses = grequests.map(reqs, exception_handler=exception_handler)
         for resp in responses:
             self.assertEqual(resp.status_code, 200)
         os.remove('large_file')
+        # Finally, delete everything that we uploaded
         reqs = []
-        for idx in range(concurrent_files):
+        for cache_id in cache_ids:
             req = grequests.delete(
-                self.base_url + '/v1/cache/large_file' + str(idx),
-                headers={'Authorization': 'xyz'}
+                self.base_url + '/v1/cache/' + cache_id,
+                headers={'Authorization': self.token}
             )
             reqs.append(req)
         responses = grequests.map(reqs, exception_handler=exception_handler)
@@ -82,7 +102,7 @@ class TestServerStress(unittest.TestCase):
         reqs = []
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'xyzxyz'
+            'Authorization': self.token
         }
         # Create a small test file for uploading
         with open('test.json', 'w+') as fwrite:
@@ -91,48 +111,35 @@ class TestServerStress(unittest.TestCase):
         for i in range(1000):
             req = grequests.post(
                 self.base_url + '/v1/cache_id',
-                data=json.dumps({'xyz': str(uuid4())}),
-                headers=headers,
-                # timeout=1.0
+                data='{"xyz":"' + str(uuid4()) + '"}',
+                headers=headers
             )
             reqs.append(req)
         responses = grequests.map(reqs, exception_handler=exception_handler)
         for resp in responses:
             self.assertEqual(resp.status_code, 200)
         # Get all the plain-string cache ids from all the responses
-        cache_ids = list(map(lambda r: json.loads(r.content)['cache_id'], responses))
+        cache_ids = list(map(lambda r: r.json()['cache_id'], responses))
         # Upload small cache files
         reqs = []
-        headers['Content-Type'] = 'multipart/form-data'
-        open_files = []
-        create_file_headers = {
-            'Authorization': 'xyz'
-        }
         file_obj = open('test.json', 'rb')
         for cid in cache_ids:
-            open_files.append(file_obj)
-            files = {'file': file_obj}
             req = grequests.post(
                 self.base_url + '/v1/cache/' + cid,
-                files=files,
-                headers=create_file_headers,
-                # timeout=5.0
+                files={'file': file_obj},
+                headers={'Authorization': self.token}
             )
             reqs.append(req)
         responses = grequests.map(reqs, exception_handler=exception_handler)
         file_obj.close()
-        for f in open_files:
-            f.close()
         for resp in responses:
             self.assertEqual(resp.status_code, 200)
         # Fetch all cache files
         reqs = []
-        headers['Content-Type'] = 'application/json'
         for cid in cache_ids:
             req = grequests.get(
                 self.base_url + '/v1/cache/' + cid,
-                headers=headers,
-                # timeout=5.0
+                headers=headers
             )
             reqs.append(req)
         responses = grequests.map(reqs, exception_handler=exception_handler)
@@ -143,19 +150,11 @@ class TestServerStress(unittest.TestCase):
         for cid in cache_ids:
             req = grequests.delete(
                 self.base_url + '/v1/cache/' + cid,
-                headers=headers,
-                # timeout=5.0
+                headers=headers
             )
             reqs.append(req)
         responses = grequests.map(reqs, exception_handler=exception_handler)
         for resp in responses:
-            if resp.status_code != 200:
-                print('=' * 100)
-                print(resp.content)
-                print('=' * 100)
             self.assertEqual(resp.status_code, 200)
-        print('-' * 100)
-        print('Ideally, these tests should have completed in less than 30s')
-        print('If not, try setting your number of gunicorn workers to (2 * $num_cores) + 1')
         # Delete the test file
         os.remove('test.json')
