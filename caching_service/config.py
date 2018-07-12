@@ -16,3 +16,5 @@ class Config:
     minio_https = os.environ.get('MINIO_SECURE', False)
     # LevelDB
     leveldb_path = os.environ['LEVELDB_PATH']
+    # KBase authentication URL
+    kbase_auth_url = os.environ.get('KBASE_AUTH_URL', 'https://kbase.us/services/auth')

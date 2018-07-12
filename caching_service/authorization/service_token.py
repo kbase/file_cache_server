@@ -1,25 +1,32 @@
 """User authorization utilities."""
 import flask
 import functools
+import requests
 
+from caching_service.config import Config
 from caching_service.exceptions import MissingHeader
 
 
 def requires_service_token(fn):
     """
     Authorize that the requester is a valid, registered service on KBase.
+    Validate a token passed in the 'Authorization' header.
 
-    This is a decorator function that can wrap a route function.
+    If valid, then set a session value to be the token's username and name.
     """
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         token = flask.request.headers.get('Authorization')
         if not token:
             raise MissingHeader('Authorization')
-        authorized = True  # TODO
-        if authorized:
-            resp = {'error': 'Unauthorized'}
-            return flask.jsonify(resp, 403)
+        headers = {'Authorization': token}
+        url = Config.kbase_auth_url + '/api/V2/token'
+        auth_resp = requests.get(url, headers=headers)
+        auth_json = auth_resp.json()
+        if 'error' in auth_json:
+            resp = {'error': auth_json['error']['message'], 'status': 'error'}
+            return (flask.jsonify(resp), 403)
         else:
+            flask.session['token_id'] = auth_json['user'] + ':' + auth_json['name']
             return fn(*args, **kwargs)
     return wrapper

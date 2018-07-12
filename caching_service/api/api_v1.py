@@ -7,10 +7,11 @@ import shutil
 from caching_service.authorization.service_token import requires_service_token
 from caching_service.cache_id.generate_cache_id import generate_cache_id
 import caching_service.exceptions as exceptions
-from caching_service.minio.main import (
-    download_file,
-    upload_file,
-    delete_entry
+from caching_service.minio import (
+    download_cache,
+    upload_cache,
+    create_placeholder,
+    delete_cache
 )
 
 api_v1 = flask.Blueprint('api_v1', __name__)
@@ -31,23 +32,23 @@ def root():
     return flask.jsonify(resp)
 
 
-@requires_service_token
 @api_v1.route('/cache_id', methods=['POST'])
+@requires_service_token
 def make_cache_id():
     """Generate a cache ID from identifying data."""
     check_content_type('application/json')
     check_header_present('Authorization')
-    token = flask.request.headers.get('Authorization')
-    cid = generate_cache_id(token, get_json())
+    cid = generate_cache_id(flask.session['token_id'], get_json())
+    create_placeholder(cid, flask.session['token_id'])
     result = {'cache_id': cid, 'status': 'generated'}
     return flask.jsonify(result)
 
 
-@requires_service_token
 @api_v1.route('/cache/<cache_id>', methods=['GET'])
+@requires_service_token
 def download_cache_file(cache_id):
     """Fetch a file given a cache ID."""
-    (path, parent_dir) = download_file(cache_id)
+    (path, parent_dir) = download_cache(cache_id, flask.session['token_id'])
 
     @flask.after_this_request
     def cleanup(response):
@@ -57,8 +58,8 @@ def download_cache_file(cache_id):
     return flask.send_file(path)
 
 
-@requires_service_token
 @api_v1.route('/cache/<cache_id>', methods=['POST'])
+@requires_service_token
 def upload_cache_file(cache_id):
     """Upload a file given a cache ID."""
     if 'file' not in flask.request.files:
@@ -66,7 +67,7 @@ def upload_cache_file(cache_id):
     f = flask.request.files['file']
     if not f.filename:
         return (flask.jsonify({'status': 'error', 'error': 'Filename missing'}), 400)
-    upload_file(cache_id, f)
+    upload_cache(cache_id, flask.session['token_id'], f)
     return flask.jsonify({'status': 'saved'})
 
 
@@ -78,9 +79,10 @@ def upload_cache_file(cache_id):
 
 
 @api_v1.route('/cache/<cache_id>', methods=['DELETE'])
+@requires_service_token
 def delete(cache_id):
     # TODO remove this endpoint
-    delete_entry(cache_id)
+    delete_cache(cache_id, flask.session['token_id'])
     return flask.jsonify({'status': 'deleted'})
 
 
@@ -101,7 +103,7 @@ def missing_cache_file(err):
 def check_content_type(correct):
     ct = flask.request.headers.get('Content-Type')
     if ct != 'application/json':
-        raise exceptions.InvalidContentType(ct, 'application/json')
+        raise exceptions.InvalidContentType(str(ct), 'application/json')
 
 
 def check_header_present(content_type):
