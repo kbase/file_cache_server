@@ -6,6 +6,7 @@ from werkzeug.exceptions import MethodNotAllowed
 from json.decoder import JSONDecodeError
 
 from caching_service.api.api_v1 import api_v1
+from caching_service.exceptions import MissingHeader, InvalidContentType
 from caching_service.config import Config
 
 app = flask.Flask(__name__)
@@ -58,6 +59,14 @@ def method_not_allowed(err):
 def invalid_json(err):
     """There has been a problem in a request in trying to parse JSON."""
     result = {'status': 'error', 'error': 'JSON parsing error: ' + str(err)}
+    return (flask.jsonify(result), 400)
+
+
+@app.errorhandler(MissingHeader)
+@app.errorhandler(InvalidContentType)
+def missing_header(err):
+    """Other user-generated request problems."""
+    result = {'status': 'error', 'error': str(err)}
     return (flask.jsonify(result), 400)
 
 
