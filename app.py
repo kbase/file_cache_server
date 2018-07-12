@@ -16,12 +16,6 @@ app.config['SECRET_KEY'] = Config.secret_key
 app.register_blueprint(api_v1, url_prefix='/v1')
 
 
-@app.before_request
-def log_request():
-    """Simple log line for every request made to the server."""
-    print(' '.join([flask.request.method, flask.request.path]))
-
-
 @app.route('/', methods=['GET'])
 def root():
     """Root path for the entire service; lists all API endpoints."""
@@ -70,8 +64,8 @@ def missing_header(err):
     return (flask.jsonify(result), 400)
 
 
-@app.teardown_request
-def close_db(response):
-    """Close the leveldb connection when the request is complete."""
-    if hasattr(flask.g, 'db'):
-        flask.g.db.close()
+@app.after_request
+def log_response(response):
+    """Simple log of each request's response."""
+    print(' '.join([flask.request.method, flask.request.path, '->', response.status]))
+    return response
