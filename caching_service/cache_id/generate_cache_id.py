@@ -19,7 +19,7 @@ def generate_cache_id(token_id, json_data):
         raise TypeError('`token_id` must be a non-empty string')
     # Get a uniform json string with keys sorted and whitespace removed
     if not json_data or not isinstance(json_data, dict):
-        raise TypeError('Must provide non-empty json_data for the cache identifier')
+        raise TypeError('Must provide non-empty JSON data for the cache identifier')
     json_text = json.dumps(json_data, sort_keys=True)
     concatenated = token_id + '\n' + json_text
     return bhash(concatenated)

@@ -38,7 +38,11 @@ def make_cache_id():
     """Generate a cache ID from identifying data."""
     check_content_type('application/json')
     check_header_present('Authorization')
-    cid = generate_cache_id(flask.session['token_id'], get_json())
+    try:
+        cid = generate_cache_id(flask.session['token_id'], get_json())
+    except TypeError as err:
+        result = {'status': 'error', 'error': str(err)}
+        return flask.jsonify(result)
     create_placeholder(cid, flask.session['token_id'])
     result = {'cache_id': cid, 'status': 'generated'}
     return flask.jsonify(result)
