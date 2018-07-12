@@ -32,7 +32,6 @@ If your docker build becomes corrupted and you're having a hard time troubleshoo
 
 ```sh
 $ docker-compose down --rmi all -v --remove-orphans
-$ docker-compose rm
 $ docker-compose build --no-cache
 $ docker-compose up
 ```
