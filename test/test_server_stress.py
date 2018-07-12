@@ -8,7 +8,9 @@ with very large files.
 import json
 import unittest
 import grequests
+import requests
 import os
+import time
 from uuid import uuid4
 
 
@@ -25,14 +27,32 @@ class TestServerStress(unittest.TestCase):
         self.base_url = 'http://web:5000'
 
     def test_large_files(self):
-        """Test Minio by uploading a few very large files at once."""
+        """Test Minio by uploading a several very large files at once."""
         one_gb = 1024 * 1024 * 1024
-        reqs = []
         with open('large_file', 'wb') as fout:
             fout.write(os.urandom(one_gb))
+        start = time.time()
+        # Measure the time it takes to upload and delete a single 1gb file
         with open('large_file', 'rb') as f:
             files = {'file': f}
-            for idx in range(2):
+            requests.post(
+                self.base_url + '/v1/cache/large_file',
+                files=files,
+                headers={'Authorization': 'xyz'}
+            )
+        requests.delete(
+            self.base_url + '/v1/cache/large_file',
+            headers={'Authorization': 'xyz'}
+        )
+        time_diff = time.time() - start
+        print('Total time for one file: ' + str(time_diff))
+        # Measure the time it takes to upload four 1gb files at once
+        start = time.time()
+        reqs = []
+        concurrent_files = 10
+        with open('large_file', 'rb') as f:
+            files = {'file': f}
+            for idx in range(concurrent_files):
                 req = grequests.post(
                     self.base_url + '/v1/cache/large_file' + str(idx),
                     files=files,
@@ -40,16 +60,21 @@ class TestServerStress(unittest.TestCase):
                 )
                 reqs.append(req)
             responses = grequests.map(reqs, exception_handler=exception_handler)
-        print(responses[0].content)
+        for resp in responses:
+            self.assertEqual(resp.status_code, 200)
         os.remove('large_file')
-        for idx in range(2):
+        reqs = []
+        for idx in range(concurrent_files):
             req = grequests.delete(
                 self.base_url + '/v1/cache/large_file' + str(idx),
                 headers={'Authorization': 'xyz'}
             )
             reqs.append(req)
         responses = grequests.map(reqs, exception_handler=exception_handler)
-        print(responses[0].content)
+        for resp in responses:
+            self.assertEqual(resp.status_code, 200)
+        time_diff = time.time() - start
+        print('Total time for ' + str(concurrent_files) + ' files: ' + str(time_diff))
 
     def test_many_connections(self):
         """Test flask, gunicorn, and leveldb by making a lot of requests at once."""
