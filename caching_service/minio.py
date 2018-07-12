@@ -64,11 +64,6 @@ def upload_cache(cache_id, token_id, file_storage):
     upload handler).
     """
     authorize_access(cache_id, token_id)
-    # Delete any existing entries
-    try:
-        delete_cache(cache_id, token_id)
-    except exceptions.MissingCache:  # TODO this should be a minio.error.ResponseError
-        pass  # No old stuff to delete
     tmp_dir = tempfile.mkdtemp()
     filename = secure_filename(file_storage.filename)
     path = os.path.join(tmp_dir, filename)
