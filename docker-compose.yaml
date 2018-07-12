@@ -28,6 +28,12 @@ services:
       - data:/data
     command: server /data
 
+  # The minio cli interface
+  mc:
+    image: minio/mc
+    volumes:
+      - data:/data
+
 volumes:
   data:
   leveldb:
