@@ -1,4 +1,4 @@
-.PHONY: test publish serve setup_db
+.PHONY: test publish serve stress_test
 
 
 serve:
@@ -14,4 +14,7 @@ test:
 	python -m pyflakes caching_service
 	python -m pyflakes app.py
 	bandit -r caching_service
-	python -m unittest discover test
+	python -m unittest discover test/caching_service
+
+stress_test:
+	python -m unittest test/test_server_stress.py
