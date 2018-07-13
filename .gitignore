@@ -9,3 +9,4 @@ dist
 .cache
 tmp/*
 coverage_report/
+.coverage
