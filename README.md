@@ -2,6 +2,8 @@
 
 Generic file-caching service for the KBase platform, allowing you to save the results of long-running jobs so you don't have repeat them unnecessarily.
 
+For example, KBase probably sequences the same E. coli contigs multiple times per day. If your app uses this service, then you can save the file ouput of a job given certain parameters so that you don't have to re-run the job.
+
 _Typical workflow:_
 
 1. Obtain a KBase authentication token (you will use this for all cache operations).
@@ -162,9 +164,17 @@ Create a file called `.env` in the root of the project with the following values
 SECRET_KEY=xyz
 MINIO_SECRET_KEY=minio123
 MINIO_ACCESS_KEY=minio
-MINIO_HOST=localhost:9000
+MINIO_HOST=minio:9000
 MINIO_BUCKET_NAME=kbase-cache
+PYTHONUNBUFFERED=true
+KBASE_AUTH_TOKEN=<your_auth_token>
 ```
+
+- `PYTHONUNBUFFERED` is useful for debug logging and can be left out of production.
+- The three `MINIO_*` vars are set up in the `docker-compose.yaml` file and are only for
+  development.
+- `SECRET_KEY` is used by flask for signing cookies (and is also used by flask plugins). In
+  production, this should be private and unguessable.
 
 ### Building and running
 
@@ -184,9 +194,11 @@ $ docker-compose up
 
 ### Bucket setup
 
-Before the cache can work, you need to manually create a bucket called "kbase-cache" (or anything else matching the `"MINIO_BUCKET_NAME"` env var):
+The app will use the bucket name set by the `MINIO_BUCKET_NAME` env var. If the bucket doesn't exist, the app will create it for you. If you monkey with the bucket, like rename or delete it, then you need to restart the server to recreate the bucket.
 
-Open up `localhost:9000` and create the bucket in the Minio web UI while the server is running.
+While docker-compose is running, you can open up `localhost:9000` to use the Minio web UI.
+
+You can also call `docker-compose run mc` to access the Minio CLI for your running Minio instance.
 
 #### Delete a whole bucket
 
@@ -195,8 +207,6 @@ To delete an entire non-empty bucket, run:
 ```sh
 $ docker-compose run mc rm -r --force /data/kbase-cache
 ```
-
-Where `kbase-cache` is the name of the bucket you want to delete. **This also deletes the bucket itself, so make sure to recreate the bucket when you start the server again.**
 
 ### Tests
 
@@ -216,8 +226,18 @@ There is a test class for stress-testing the server in `test/test_server_stress.
 $ docker-compose run web make stress_test
 ```
 
-It makes a large number of parallel requests (1000 total) to the server to upload/download/delete small files.
-It also uploads and deletes two 1gb files in parallel.
+These tests will:
+* Test gunicorn/gevent workers: Upload/download/fetch/delete 1000 small files in parallel.
+* Test Minio parallelism: Upload a single 1gb file and then upload 10x 1gb files in parallel and compare times.
+
+### How it works
+
+* All caches have a unique ID which is a hash of their service token username, name, and an arbitrary set of JSON parameters.
+* We use Minio's file metadata to store the original filename, token ID, expiration, and any other metadata we may need in the future.
+* When a cache ID is generated, a placeholder (0 byte) file is created with metadata for the token ID and expiration
+* Every cache file is saved to Minio under its cache ID.
+* We authenticate access to a file by matching a token ID (token username + name) against a token ID stored in the metadata of an existing file with the same cache ID.
+* To expire files, we read all the metadata in a bucket and delete the expired files.
 
 ### Project anatomy
 
@@ -228,6 +248,8 @@ It also uploads and deletes two 1gb files in parallel.
 * `/caching_service/api` holds all the routes for each api version
 * `/caching_service/hash.py` is a utility wrapping pynacl (which uses libsodium) to do blake2b hashing
 * `/caching_service/authorization/` contains utilites for authorization using KBase's auth service
+
+This app uses Flask blueprints to create separate routes for each API version.
 
 _Dependencies:_
 
