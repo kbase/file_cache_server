@@ -14,7 +14,10 @@ test:
 	python -m pyflakes caching_service
 	python -m pyflakes app.py
 	bandit -r caching_service
-	python -m unittest discover test/caching_service
+	coverage run --source=caching_service -m unittest discover test/caching_service
+	coverage report
+	coverage html -d coverage_report/
+	echo "Open ./coverage_report/index.html in your browser"
 
 stress_test:
 	python -m unittest test/test_server_stress.py
