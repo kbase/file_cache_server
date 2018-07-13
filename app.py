@@ -12,6 +12,7 @@ from caching_service.config import Config
 app = flask.Flask(__name__)
 app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', True)
 app.config['SECRET_KEY'] = Config.secret_key
+app.url_map.strict_slashes = False  # allow both `get /v1/` and `get /v1`
 
 app.register_blueprint(api_v1, url_prefix='/v1')
 
