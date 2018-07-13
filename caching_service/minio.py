@@ -9,6 +9,7 @@ from caching_service.config import Config
 import caching_service.exceptions as exceptions
 
 
+# Initialize the Minio client object using the app's configuration
 minio_client = Minio(
     Config.minio_host,
     access_key=Config.minio_access_key,
@@ -17,8 +18,8 @@ minio_client = Minio(
 )
 
 
-# This is how metadata is stored in minio files for 'expiration' and 'filename'
-# For example if you set the metadata 'xyz', then minio will store it as 'X-Amz-Meta-Xyz'
+# This is how metadata is stored in minio files for 'expiration', 'filename', etc
+# For example if you set the metadata 'xyz_abc', then minio will store it as 'X-Amz-Meta-Xyz_abc'
 metadata_expiration_key = 'X-Amz-Meta-Expiration'
 metadata_filename_key = 'X-Amz-Meta-Filename'
 metadata_token_id_key = 'X-Amz-Meta-Token_id'
@@ -90,11 +91,12 @@ def expire_entries():
     # TODO each delete should be concurrent
     # TODO
     # now = time.time()
+    # see minio.list_objects
     # for key in db.scan_iter(expiration_prefix):
     #     expiry = db.get(key)
     #     cache_id = key.replace(expiration_prefix, '')
     #     if now > int(expiry):
-    #         delete_entry(cache_id)
+    #         delete_cache(cache_id)
     pass
 
 
@@ -104,14 +106,20 @@ def delete_cache(cache_id, token_id):
     minio_client.remove_object(Config.minio_bucket_name, cache_id)
 
 
+def get_metadata(cache_id):
+    """Return the Minio metadata dict for a cache file."""
+    stat = minio_client.stat_object(Config.minio_bucket_name, cache_id)
+    return stat.metadata
+
+
 def get_cache_filename(cache_id):
     """
     Given a cache ID, return the filename of the cached file.
 
     This may raise a minio.error.NoSuchKey (missing cache).
     """
-    stat = minio_client.stat_object(Config.minio_bucket_name, cache_id)
-    return stat.metadata[metadata_filename_key]
+    metadata = get_metadata(cache_id)
+    return metadata[metadata_filename_key]
 
 
 def download_cache(cache_id, token_id):
