@@ -17,7 +17,7 @@ test:
 	coverage run --source=caching_service -m unittest discover test/caching_service
 	coverage report
 	coverage html -d coverage_report/
-	echo "Open ./coverage_report/index.html in your browser"
+	echo "Generated HTML coverage report to ./coverage_report/index.html"
 
 stress_test:
 	python -m unittest test/test_server_stress.py
