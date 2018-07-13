@@ -5,7 +5,7 @@ import minio.error
 import shutil
 
 from caching_service.authorization.service_token import requires_service_token
-from caching_service.cache_id.generate_cache_id import generate_cache_id
+from caching_service.generate_cache_id import generate_cache_id
 import caching_service.exceptions as exceptions
 from caching_service.minio import (
     download_cache,
