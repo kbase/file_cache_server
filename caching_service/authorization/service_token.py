@@ -4,7 +4,7 @@ import functools
 import requests
 
 from caching_service.config import Config
-from caching_service.exceptions import MissingHeader
+from caching_service.exceptions import MissingHeader, UnauthorizedAccess
 
 
 def requires_service_token(fn):
@@ -24,6 +24,7 @@ def requires_service_token(fn):
         auth_resp = requests.get(url, headers=headers)
         auth_json = auth_resp.json()
         if 'error' in auth_json:
+            raise UnauthorizedAccess(auth_json['error']['message'])
             resp = {'error': auth_json['error']['message'], 'status': 'error'}
             return (flask.jsonify(resp), 403)
         else:

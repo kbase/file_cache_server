@@ -32,6 +32,10 @@ class MissingCache(Exception):
         return "Unknown cache ID: " + self.cache_id
 
 
-class UnauthorizedCacheAccess(Exception):
+class UnauthorizedAccess(Exception):
     """An attempt to access a cache entry with the wrong token."""
-    pass
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
