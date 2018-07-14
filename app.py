@@ -6,7 +6,7 @@ from werkzeug.exceptions import MethodNotAllowed
 from json.decoder import JSONDecodeError
 
 from caching_service.api.api_v1 import api_v1
-from caching_service.exceptions import MissingHeader, InvalidContentType
+from caching_service.exceptions import MissingHeader, InvalidContentType, UnauthorizedAccess
 from caching_service.config import Config
 
 app = flask.Flask(__name__)
@@ -41,6 +41,12 @@ def general_exception_handler(err):
     print('=' * 80)
     result = {'status': 'error', 'error': 'Unexpected server error'}
     return (flask.jsonify(result), 500)
+
+
+@app.errorhandler(UnauthorizedAccess)
+def unauthorized_access(err):
+    result = {'status': 'error', 'error': str(err)}
+    return (flask.jsonify(result), 403)
 
 
 @app.errorhandler(MethodNotAllowed)
