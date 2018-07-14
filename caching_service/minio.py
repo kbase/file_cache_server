@@ -48,13 +48,13 @@ def authorize_access(cache_id, token_id):
     """
     Given a cache ID and token ID, authorize that the token has permission to access the cache.
 
-    This will raise caching_service.exceptions.UnauthorizedCacheAccess if it is unauthorized.
+    This will raise caching_service.exceptions.UnauthorizedAccess if it is unauthorized.
     This will raise minio.error.NoSuchKey if the cache ID does not exist.
     """
     stat = minio_client.stat_object(Config.minio_bucket_name, cache_id)
     existing_token_id = stat.metadata[metadata_token_id_key]
     if token_id != existing_token_id:
-        raise exceptions.UnauthorizedCacheAccess
+        raise exceptions.UnauthorizedAccess('You do not have access to that cache')
 
 
 def upload_cache(cache_id, token_id, file_storage):
