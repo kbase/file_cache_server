@@ -98,7 +98,7 @@ def delete(cache_id):
 def missing_cache_file(err):
     """A cache ID was not found, but was expected to exist."""
     result = {'status': 'error', 'error': 'Cache ID not found'}
-    return flask.jsonify(result)
+    return (flask.jsonify(result), 404)
 
 
 # General, small route helpers
