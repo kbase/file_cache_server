@@ -79,7 +79,7 @@ class TestMinio(unittest.TestCase):
         token_id = 'user:name'
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
-        with self.assertRaises(exceptions.UnauthorizedCacheAccess):
+        with self.assertRaises(exceptions.UnauthorizedAccess):
             minio.download_cache(cache_id, token_id + 'x')
 
     def test_unauthorized_upload(self):
@@ -88,7 +88,7 @@ class TestMinio(unittest.TestCase):
         cache_id = str(uuid4())
         file_storage = self.make_test_file_storage(cache_id, token_id)
         minio.create_placeholder(cache_id, token_id)
-        with self.assertRaises(exceptions.UnauthorizedCacheAccess):
+        with self.assertRaises(exceptions.UnauthorizedAccess):
             minio.upload_cache(cache_id, token_id + 'x', file_storage)
         file_storage.stream.close()
 
