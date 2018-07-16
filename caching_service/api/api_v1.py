@@ -78,7 +78,6 @@ def upload_cache_file(cache_id):
 @api_v1.route('/cache/<cache_id>', methods=['DELETE'])
 @requires_service_token
 def delete(cache_id):
-    # TODO remove this endpoint
     delete_cache(cache_id, flask.session['token_id'])
     return flask.jsonify({'status': 'deleted'})
 

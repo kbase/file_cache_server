@@ -100,7 +100,21 @@ class TestApiV1(unittest.TestCase):
         self.assertEqual(json['status'], 'generated', 'Status is "generated"')
         self.assertEqual(len(json['cache_id']), 64, 'Creates 64-byte cache ID')
 
-    # TODO test_make_cache_id_malformed_json
+    def test_make_cache_id_malformed_json(self):
+        """
+        Test a call to make a cache ID with invalid JSON formatting.
+
+        POST /cache_id
+        """
+        resp = requests.post(
+            url + '/cache_id',
+            headers={'Authorization': auth, 'Content-Type': 'application/json'},
+            data='{{{{(((('
+        )
+        json = resp.json()
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(json['status'], 'error', 'Status is "error"')
+        self.assertTrue('JSON parsing error' in json['error'], 'Error message is set')
 
     def test_make_cache_id_unauthorized(self):
         """
