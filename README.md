@@ -171,10 +171,9 @@ KBASE_AUTH_TOKEN=<your_auth_token>
 ```
 
 - `PYTHONUNBUFFERED` is useful for debug logging and can be left out of production.
-- The three `MINIO_*` vars are set up in the `docker-compose.yaml` file and are only for
-  development.
-- `SECRET_KEY` is used by flask for signing cookies (and is also used by flask plugins). In
-  production, this should be private and unguessable.
+- The three `MINIO_*` vars are set up in the `docker-compose.yaml` file and are only for development.
+- `SECRET_KEY` is used by flask for signing cookies (and is also used by flask plugins). In production, this should be private and unguessable.
+- `KBASE_AUTH_TOKEN` is used to run tests and is not necessary in production.
 
 ### Building and running
 
@@ -194,7 +193,7 @@ $ docker-compose up
 
 ### Bucket setup
 
-The app will use the bucket name set by the `MINIO_BUCKET_NAME` env var. If the bucket doesn't exist, the app will create it for you. If you monkey with the bucket, like rename or delete it, then you need to restart the server to recreate the bucket.
+The app will use the bucket name set by the `MINIO_BUCKET_NAME` env var. If the bucket doesn't exist, the app will create it for you. If you monkey with the bucket (eg. rename or delete it) then you need to restart the server to recreate the bucket.
 
 While docker-compose is running, you can open up `localhost:9000` to use the Minio web UI.
 
@@ -207,6 +206,8 @@ To delete an entire non-empty bucket, run:
 ```sh
 $ docker-compose run mc rm -r --force /data/kbase-cache
 ```
+
+Restart the server afterwards to re-create the bucket.
 
 ### Administration CLI
 
