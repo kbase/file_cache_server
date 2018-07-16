@@ -17,10 +17,11 @@ minio_client = Minio(
     secret_key=Config.minio_secret_key,
     secure=Config.minio_https
 )
+bucket_name = Config.minio_bucket_name
 
 # Create the bucket if it does not exist
 try:
-    minio_client.make_bucket(Config.minio_bucket_name)
+    minio_client.make_bucket(bucket_name)
 except minio.error.BucketAlreadyExists:
     pass
 except minio.error.BucketAlreadyOwnedByYou:
@@ -49,7 +50,7 @@ def create_placeholder(cache_id, token_id):
         'token_id': token_id
     }
     data = io.BytesIO()
-    minio_client.put_object(Config.minio_bucket_name, cache_id, data, 0, metadata=metadata)
+    minio_client.put_object(bucket_name, cache_id, data, 0, metadata=metadata)
 
 
 def authorize_access(cache_id, token_id):
@@ -59,7 +60,7 @@ def authorize_access(cache_id, token_id):
     This will raise caching_service.exceptions.UnauthorizedAccess if it is unauthorized.
     This will raise minio.error.NoSuchKey if the cache ID does not exist.
     """
-    stat = minio_client.stat_object(Config.minio_bucket_name, cache_id)
+    stat = minio_client.stat_object(bucket_name, cache_id)
     existing_token_id = stat.metadata[metadata_token_id_key]
     if token_id != existing_token_id:
         raise exceptions.UnauthorizedAccess('You do not have access to that cache')
@@ -87,7 +88,7 @@ def upload_cache(cache_id, token_id, file_storage):
         'token_id': token_id
     }
     try:
-        minio_client.fput_object(Config.minio_bucket_name, cache_id, path, metadata=metadata)
+        minio_client.fput_object(bucket_name, cache_id, path, metadata=metadata)
     finally:
         shutil.rmtree(tmp_dir)
 
@@ -98,14 +99,14 @@ def expire_entries():
     """
     print('Checking the expiration of all stored objects..')
     now = time.time()
-    objects = minio_client.list_objects_v2(Config.minio_bucket_name)
+    objects = minio_client.list_objects_v2(bucket_name)
     removed_count = 0
     total_count = 0
 
     def remove_obj(oid, count):
         """Remove an expired object."""
         print('Removing', oid)
-        minio_client.remove_object(Config.minio_bucket_name, oid)
+        minio_client.remove_object(bucket_name, oid)
         return count + 1
 
     for obj in objects:
@@ -122,17 +123,18 @@ def expire_entries():
                 removed_count = remove_obj(obj.object_name, removed_count)
     print('... Finished running. Total objects: ' + str(total_count) +
           '. Removed ' + str(removed_count) + ' objects.')
+    return (removed_count, total_count)
 
 
 def delete_cache(cache_id, token_id):
     """Delete a cache entry in both leveldb and minio."""
     authorize_access(cache_id, token_id)
-    minio_client.remove_object(Config.minio_bucket_name, cache_id)
+    minio_client.remove_object(bucket_name, cache_id)
 
 
 def get_metadata(cache_id):
     """Return the Minio metadata dict for a cache file."""
-    stat = minio_client.stat_object(Config.minio_bucket_name, cache_id)
+    stat = minio_client.stat_object(bucket_name, cache_id)
     return stat.metadata
 
 

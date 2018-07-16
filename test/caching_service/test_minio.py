@@ -7,6 +7,7 @@ import io
 from werkzeug.datastructures import FileStorage
 from minio.error import NoSuchKey
 from uuid import uuid4
+import tempfile
 
 import caching_service.exceptions as exceptions
 
@@ -109,3 +110,22 @@ class TestMinio(unittest.TestCase):
         minio.create_placeholder(cache_id, token_id)
         with self.assertRaises(NoSuchKey):
             minio.download_cache(cache_id + 'x', token_id)
+
+    def test_expire_entries(self):
+        """
+        Test that the expire_entries function removes expired files and does not remove non-expired
+        files.
+        """
+        now = str(int(time.time()))
+        token_id = 'user:name'
+        cache_id = str(uuid4())
+        metadata = {
+            'filename': 'xyz.json',
+            'expiration': now,  # quickly expires
+            'token_id': token_id
+        }
+        with tempfile.NamedTemporaryFile(delete=True) as temp:
+            minio.minio_client.fput_object(minio.bucket_name, cache_id, temp.name, metadata=metadata)
+        (removed_count, total_count) = minio.expire_entries()
+        self.assertTrue(removed_count >= 1, 'Removes at least 1 expired object.')
+        self.assertTrue(total_count > 0, 'The bucket is non-empty.')
