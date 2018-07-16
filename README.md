@@ -208,6 +208,20 @@ To delete an entire non-empty bucket, run:
 $ docker-compose run mc rm -r --force /data/kbase-cache
 ```
 
+### Administration CLI
+
+Run the admin CLI with:
+
+```
+$ docker-compose run web python admin.py
+```
+
+Delete all expired cache entries with:
+
+```
+$ docker-compose run web python admin.py expire_all
+```
+
 ### Tests
 
 Set an env var for `KBASE_AUTH_TOKEN` before running the tests (you can put this in your `.env` file).

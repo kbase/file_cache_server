@@ -1,9 +1,5 @@
 .PHONY: test publish serve stress_test
 
-
-serve:
-	gunicorn -w 2 app:app -b localhost:5000 --reload
-
 test:
 	flake8 --max-complexity 5 app.py
 	flake8 --max-complexity 5 caching_service

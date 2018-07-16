@@ -1,4 +1,5 @@
 from minio import Minio
+import minio.error
 import time
 import tempfile
 import os
@@ -17,6 +18,13 @@ minio_client = Minio(
     secure=Config.minio_https
 )
 
+# Create the bucket if it does not exist
+try:
+    minio_client.make_bucket(Config.minio_bucket_name)
+except minio.error.BucketAlreadyExists:
+    pass
+except minio.error.BucketAlreadyOwnedByYou:
+    pass
 
 # This is how metadata is stored in minio files for 'expiration', 'filename', etc
 # For example if you set the metadata 'xyz_abc', then minio will store it as 'X-Amz-Meta-Xyz_abc'
@@ -88,16 +96,32 @@ def expire_entries():
     """
     Iterate over all expiration entries in the database, removing any expired caches.
     """
-    # TODO each delete should be concurrent
-    # TODO
-    # now = time.time()
-    # see minio.list_objects
-    # for key in db.scan_iter(expiration_prefix):
-    #     expiry = db.get(key)
-    #     cache_id = key.replace(expiration_prefix, '')
-    #     if now > int(expiry):
-    #         delete_cache(cache_id)
-    pass
+    print('Checking the expiration of all stored objects..')
+    now = time.time()
+    objects = minio_client.list_objects_v2(Config.minio_bucket_name)
+    removed_count = 0
+    total_count = 0
+
+    def remove_obj(oid, count):
+        """Remove an expired object."""
+        print('Removing', oid)
+        minio_client.remove_object(Config.minio_bucket_name, oid)
+        return count + 1
+
+    for obj in objects:
+        # XXX it seems that the Minio client does not return metadata when listing objects
+        # Issue here: https://github.com/minio/minio-py/issues/679
+        # We have to fetch it separately
+        total_count += 1
+        metadata = get_metadata(obj.object_name)
+        if not metadata or (metadata_expiration_key not in metadata):
+            removed_count = remove_obj(obj.object_name, removed_count)
+        else:
+            expiry = int(metadata.get(metadata_expiration_key))
+            if now > expiry:
+                removed_count = remove_obj(obj.object_name, removed_count)
+    print('... Finished running. Total objects: ' + str(total_count) +
+          '. Removed ' + str(removed_count) + ' objects.')
 
 
 def delete_cache(cache_id, token_id):
