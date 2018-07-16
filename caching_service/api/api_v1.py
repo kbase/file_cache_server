@@ -75,13 +75,6 @@ def upload_cache_file(cache_id):
     return flask.jsonify({'status': 'saved'})
 
 
-# @api_v1.route('/expire_all', methods=['POST'])
-# def expire_all():
-#     # TODO remove this endpoint
-#     result = expire_entries()
-#     return flask.jsonify(result)
-
-
 @api_v1.route('/cache/<cache_id>', methods=['DELETE'])
 @requires_service_token
 def delete(cache_id):
