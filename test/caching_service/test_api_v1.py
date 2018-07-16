@@ -57,32 +57,32 @@ class TestApiV1(unittest.TestCase):
     def test_missing_auth(self):
         """Test the error response for all endpoints that require the Authentication header."""
         endpoints = [
-            {
-                'method': 'POST',
-                'url': url + '/cache_id'
-            },
-            {
-                'method': 'GET',
-                'url': url + '/cache/example'
-            },
-            {
-                'method': 'POST',
-                'url': url + '/cache/example'
-            },
-            {
-                'method': 'DELETE',
-                'url': url + '/cache/example'
-            }
+            {'method': 'POST', 'url': url + '/cache_id'},
+            {'method': 'GET', 'url': url + '/cache/example'},
+            {'method': 'POST', 'url': url + '/cache/example'},
+            {'method': 'DELETE', 'url': url + '/cache/example'}
         ]
         for req_data in endpoints:
-            resp = requests.post(
-                req_data['url'],
-                headers={}
-            )
+            resp = requests.post(req_data['url'], headers={})
             json = resp.json()
             self.assertEqual(resp.status_code, 400, 'Status code is 400')
             self.assertEqual(json['status'], 'error', 'Status is set to "error"')
-            self.assertTrue('Missing header' in json['error'])
+            self.assertTrue('Missing header' in json['error'], 'Error message is set')
+
+    def test_invalid_auth(self):
+        """Test the error response for all endpoints that require valid auth."""
+        endpoints = [
+            {'method': 'POST', 'url': url + '/cache_id'},
+            {'method': 'GET', 'url': url + '/cache/example'},
+            {'method': 'POST', 'url': url + '/cache/example'},
+            {'method': 'DELETE', 'url': url + '/cache/example'}
+        ]
+        for req_data in endpoints:
+            resp = requests.post(req_data['url'], headers={'Authorization': auth + 'x'})
+            json = resp.json()
+            self.assertEqual(resp.status_code, 403, 'Status code is 403')
+            self.assertEqual(json['status'], 'error', 'Status is set to "error"')
+            self.assertTrue('Invalid token' in json['error'], 'Error message is set')
 
     def test_make_cache_id_valid(self):
         """
@@ -179,21 +179,6 @@ class TestApiV1(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, content)
 
-    def test_download_cache_file_invalid_auth(self):
-        """
-        Test a call to download a cache file with an invalid auth token.
-
-        GET /cache/<cache_id>
-        """
-        resp = requests.get(
-            url + '/cache/example',
-            headers={'Authorization': auth + 'x'}
-        )
-        json = resp.json()
-        self.assertEqual(resp.status_code, 403, 'Status code is 403')
-        self.assertEqual(json['status'], 'error', 'Status is set to "error"')
-        self.assertTrue('Invalid token' in json['error'], 'Gives error message')
-
     def test_download_cache_file_unauthorized_cache(self):
         """
         Test a call to download a cache file that was made by a different token ID
@@ -211,14 +196,15 @@ class TestApiV1(unittest.TestCase):
         self.assertEqual(json['status'], 'error', 'Status is set to "error"')
         self.assertTrue('You do not have access' in json['error'])
 
-    def test_download_cache_file_nonexistent(self):
+    def test_download_cache_file_missing_cache(self):
         """
         Test a call to download a cache file that does not exist
 
         GET /cache/<cache_id>
         """
+        cache_id = str(uuid4())
         resp = requests.get(
-            url + '/cache/' + str(uuid4()),
+            url + '/cache/' + cache_id,
             headers={'Authorization': auth}
         )
         json = resp.json()
@@ -242,23 +228,6 @@ class TestApiV1(unittest.TestCase):
         json = resp.json()
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(json['status'], 'saved')
-
-    def test_upload_cache_file_invalid_auth(self):
-        """
-        Test a call to upload a cache file successfully.
-
-        POST /cache/<cache_id>
-        """
-        cache_id = get_cache_id()
-        resp = requests.post(
-            url + '/cache/' + cache_id,
-            headers={'Authorization': auth + 'x'},
-            files={'file': ('test.json', b'{"x": 1}')}
-        )
-        json = resp.json()
-        self.assertEqual(resp.status_code, 403, 'Status code is 403')
-        self.assertEqual(json['status'], 'error', 'Status is set to "error"')
-        self.assertTrue('Invalid token' in json['error'], 'Gives error message')
 
     def test_upload_cache_file_unauthorized_cache(self):
         """
@@ -329,22 +298,6 @@ class TestApiV1(unittest.TestCase):
         # Test that the cache is inaccessible
         with self.assertRaises(NoSuchKey):
             minio.get_metadata(cache_id)
-
-    def test_delete_invalid_auth(self):
-        """
-        Test a deletion of a cache entry with invalid auth token.
-
-        DELETE /cache/<cache_id>
-        """
-        cache_id = get_cache_id()
-        resp = requests.delete(
-            url + '/cache/' + cache_id,
-            headers={'Authorization': auth + 'x'}
-        )
-        json = resp.json()
-        self.assertEqual(resp.status_code, 403, 'Status code is 403')
-        self.assertEqual(json['status'], 'error', 'Status is "error"')
-        self.assertTrue('Invalid token' in json['error'], 'Gives error message')
 
     def test_delete_unauthorized_cache(self):
         """
