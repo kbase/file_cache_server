@@ -8,13 +8,10 @@ services:
       context: .
       dockerfile: docker/Dockerfile-python
     env_file: .env
-    environment:
-      LEVELDB_PATH: /leveldb
     ports:
       - "5000:5000"
     volumes:
       - .:/app
-      - leveldb:/leveldb
 
   # For running the file server
   minio:
@@ -36,4 +33,3 @@ services:
 
 volumes:
   data:
-  leveldb:
