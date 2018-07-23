@@ -30,7 +30,7 @@ class TestMinio(unittest.TestCase):
 
     def test_placeholder_creation(self):
         """Test the creation of a cache file placeholder."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
         minio.authorize_access(cache_id, token_id)
@@ -48,7 +48,7 @@ class TestMinio(unittest.TestCase):
 
     def test_cache_upload(self):
         """Test a valid file upload to a cache ID."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
         file_storage = self.make_test_file_storage(cache_id, token_id)
@@ -68,7 +68,7 @@ class TestMinio(unittest.TestCase):
 
     def test_cache_delete(self):
         """Test a valid file deletion."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
         minio.delete_cache(cache_id, token_id)
@@ -77,7 +77,7 @@ class TestMinio(unittest.TestCase):
 
     def test_unauthorized_download(self):
         """Test a download to the wrong token ID."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
         with self.assertRaises(exceptions.UnauthorizedAccess):
@@ -85,7 +85,7 @@ class TestMinio(unittest.TestCase):
 
     def test_unauthorized_upload(self):
         """Test an upload to the wrong token ID."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         cache_id = str(uuid4())
         file_storage = self.make_test_file_storage(cache_id, token_id)
         minio.create_placeholder(cache_id, token_id)
@@ -95,7 +95,7 @@ class TestMinio(unittest.TestCase):
 
     def test_missing_cache_upload(self):
         """Test an upload to a missing cache ID."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         cache_id = str(uuid4())
         file_storage = self.make_test_file_storage(cache_id, token_id)
         minio.create_placeholder(cache_id, token_id)
@@ -105,7 +105,7 @@ class TestMinio(unittest.TestCase):
 
     def test_missing_cache_download(self):
         """Test a download to a missing cache ID."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
         with self.assertRaises(NoSuchKey):
@@ -117,7 +117,7 @@ class TestMinio(unittest.TestCase):
         files.
         """
         now = str(int(time.time()))
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         cache_id = str(uuid4())
         metadata = {
             'filename': 'xyz.json',

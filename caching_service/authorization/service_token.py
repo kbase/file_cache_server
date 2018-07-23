@@ -28,6 +28,7 @@ def requires_service_token(fn):
             resp = {'error': auth_json['error']['message'], 'status': 'error'}
             return (flask.jsonify(resp), 403)
         else:
-            flask.session['token_id'] = auth_json['user'] + ':' + auth_json['name']
+            token_id = ':'.join([Config.kbase_auth_url, auth_json['user'], auth_json['name']])
+            flask.session['token_id'] = token_id
             return fn(*args, **kwargs)
     return wrapper

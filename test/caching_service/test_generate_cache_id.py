@@ -7,14 +7,14 @@ class TestMinio(unittest.TestCase):
 
     def test_valid(self):
         """Test a valid cache ID generation."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         json_data = {'xyz': 123}
         cid = generate_cache_id(token_id, json_data)
         self.assertEqual(len(cid), 64, 'Creates 64-byte hash')
 
     def test_empty_json(self):
         """Pass an empty json data hash and check for the error."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         json_data = {}  # type: dict
         with self.assertRaises(TypeError):
             generate_cache_id(token_id, json_data)
@@ -28,7 +28,7 @@ class TestMinio(unittest.TestCase):
 
     def test_invalid_json_data_type(self):
         """Pass a non-jsonifiable type and check for error."""
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         json_data = unittest
         with self.assertRaises(TypeError):
             generate_cache_id(token_id, json_data)
@@ -56,7 +56,7 @@ class TestMinio(unittest.TestCase):
         If you generate a cache ID twice using the same token_id and json_data, then you should get
         the same hash both times.
         """
-        token_id = 'user:name'
+        token_id = 'url:user:name'
         json_data = {'xyz': 123}
         cid1 = generate_cache_id(token_id, json_data)
         cid2 = generate_cache_id(token_id, json_data)

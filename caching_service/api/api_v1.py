@@ -102,9 +102,9 @@ def check_content_type(correct):
         raise exceptions.InvalidContentType(str(ct), 'application/json')
 
 
-def check_header_present(content_type):
-    if not flask.request.headers.get('Authorization'):
-        raise exceptions.MissingHeader('Authorization')
+def check_header_present(name):
+    if name not in flask.request.headers:
+        raise exceptions.MissingHeader(name)
 
 
 def get_json():

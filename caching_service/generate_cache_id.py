@@ -11,7 +11,7 @@ def generate_cache_id(token_id, json_data):
     Generate a cache ID from a service token and serializable data
     Args:
         token_id - required - Pass in a service authentication token data in the form of
-          'user:name'
+          'auth_url:user:name'
         params - required - Pass in an arbitrary non-empty string of identify cache data
     Returns a cache ID (a blake2b hash)
     """
