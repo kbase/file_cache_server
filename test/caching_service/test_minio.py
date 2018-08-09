@@ -1,14 +1,14 @@
-import caching_service.minio as minio
 import unittest
-import re
 import shutil
 import time
+import os
 import io
 from werkzeug.datastructures import FileStorage
 from minio.error import NoSuchKey
 from uuid import uuid4
 import tempfile
 
+import caching_service.minio as minio
 import caching_service.exceptions as exceptions
 
 
@@ -34,17 +34,19 @@ class TestMinio(unittest.TestCase):
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
         minio.authorize_access(cache_id, token_id)
-        (save_path, tmp_dir) = minio.download_cache(cache_id, token_id)
-        print(save_path, tmp_dir)
-        self.assertRegex(save_path, re.compile('^.+\/placeholder'))
-        with open(save_path, 'rb') as placeholder:
-            contents = placeholder.read()
+        tmp_dir = tempfile.mkdtemp()
+        with self.assertRaises(exceptions.MissingCache):
+            minio.download_cache(cache_id, token_id, tmp_dir)
+        save_path = os.path.join(tmp_dir, 'x')
+        minio.minio_client.fget_object(minio.Config.minio_bucket_name, cache_id, save_path)
+        with open(save_path, 'rb') as fd:
+            contents = fd.read()
             self.assertEqual(contents, b'')
         shutil.rmtree(tmp_dir)
         metadata = minio.get_metadata(cache_id)
-        self.assertTrue(int(metadata[minio.metadata_expiration_key]) > time.time())
-        self.assertEqual(metadata[minio.metadata_filename_key], 'placeholder')
-        self.assertEqual(metadata[minio.metadata_token_id_key], token_id)
+        self.assertTrue(int(metadata['expiration']) > time.time())
+        self.assertEqual(metadata['filename'], 'placeholder')
+        self.assertEqual(metadata['token_id'], token_id)
 
     def test_cache_upload(self):
         """Test a valid file upload to a cache ID."""
@@ -55,15 +57,13 @@ class TestMinio(unittest.TestCase):
         minio.upload_cache(cache_id, token_id, file_storage)
         file_storage.stream.close()
         metadata = minio.get_metadata(cache_id)
-        self.assertTrue(int(metadata[minio.metadata_expiration_key]) > time.time(),
-                        'Expiration is in the future')
-        self.assertEqual(metadata[minio.metadata_filename_key], file_storage.filename,
-                         'Correct filename is saved in the metadata')
-        self.assertEqual(metadata[minio.metadata_token_id_key], token_id,
-                         'Correct token ID is saved in the metadata')
-        (save_path, tmp_dir) = minio.download_cache(cache_id, token_id)
-        with open(save_path, 'rb') as saved_file:
-            saved_contents = saved_file.read().decode('utf-8')
+        self.assertTrue(int(metadata['expiration']) > time.time(), 'Expiration is in the future')
+        self.assertEqual(metadata['filename'], file_storage.filename, 'Correct filename is saved in the metadata')
+        self.assertEqual(metadata['token_id'], token_id, 'Correct token ID is saved in the metadata')
+        tmp_dir = tempfile.mkdtemp()
+        save_path = minio.download_cache(cache_id, token_id, tmp_dir)
+        with open(save_path, 'rb') as fd:
+            saved_contents = fd.read().decode('utf-8')
             self.assertEqual(saved_contents, 'contents', 'Correct file contents uploaded')
 
     def test_cache_delete(self):
@@ -72,16 +72,20 @@ class TestMinio(unittest.TestCase):
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
         minio.delete_cache(cache_id, token_id)
+        tmp_dir = tempfile.mkdtemp()
         with self.assertRaises(NoSuchKey):
-            minio.download_cache(cache_id, token_id)
+            minio.download_cache(cache_id, token_id, tmp_dir)
+        shutil.rmtree(tmp_dir)
 
     def test_unauthorized_download(self):
         """Test a download to the wrong token ID."""
         token_id = 'url:user:name'
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
+        tmp_dir = tempfile.mkdtemp()
         with self.assertRaises(exceptions.UnauthorizedAccess):
-            minio.download_cache(cache_id, token_id + 'x')
+            minio.download_cache(cache_id, token_id + 'x', tmp_dir)
+        shutil.rmtree(tmp_dir)
 
     def test_unauthorized_upload(self):
         """Test an upload to the wrong token ID."""
@@ -108,8 +112,10 @@ class TestMinio(unittest.TestCase):
         token_id = 'url:user:name'
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
+        tmp_dir = tempfile.mkdtemp()
         with self.assertRaises(NoSuchKey):
-            minio.download_cache(cache_id + 'x', token_id)
+            minio.download_cache(cache_id + 'x', token_id, tmp_dir)
+        shutil.rmtree(tmp_dir)
 
     def test_expire_entries(self):
         """
@@ -124,8 +130,8 @@ class TestMinio(unittest.TestCase):
             'expiration': now,  # quickly expires
             'token_id': token_id
         }
-        with tempfile.NamedTemporaryFile(delete=True) as temp:
-            minio.minio_client.fput_object(minio.bucket_name, cache_id, temp.name, metadata=metadata)
+        with tempfile.NamedTemporaryFile(delete=True) as fd:
+            minio.minio_client.fput_object(minio.bucket_name, cache_id, fd.name, metadata=metadata)
         (removed_count, total_count) = minio.expire_entries()
         self.assertTrue(removed_count >= 1, 'Removes at least 1 expired object.')
         self.assertTrue(total_count > 0, 'The bucket is non-empty.')

@@ -46,9 +46,16 @@ Sample successful response:
 ```
 {
   "cache_id": "xyzxyz",
-  "status": "created"
+  "status": "ok",
+  "metadata": {
+    "filename": "xyz.txt",
+    "token_id": "<auth_url>:<username>",
+    "expiration": "<unix_timestamp>"
+  }
 }
 ```
+
+If the `metadata/filename` key in the response is `placeholder`, then you know that no file has yet been saved to this cache ID.
 
 Sample failed response:
 
@@ -72,6 +79,8 @@ Note that cache IDs expire after 7 days if unused.
   * `Authorization` must be your service token
 * Body: multipart file upload data using the `'file'` field
 
+We use `multipart/form-data` so you can pass a filename in the request.
+
 Sample request:
 
 ```sh
@@ -85,7 +94,7 @@ curl -X POST
 Sample successful response:
 
 ```sh
-{"status": "created"}
+{"status": "ok"}
 ```
 
 Sample failed response:
@@ -142,7 +151,7 @@ curl -X DELETE
 Sample successful response:
 
 ```sh
-{"status": "deleted"}
+{"status": "ok"}
 ```
 
 Sample failed response:
@@ -230,7 +239,7 @@ Set an env var for `KBASE_AUTH_TOKEN` before running the tests (you can put this
 While the server is running, do:
 
 ```sh
-$ docker-compose run web make test
+$ make test
 ```
 
 #### Stress tests
@@ -238,7 +247,7 @@ $ docker-compose run web make test
 There is a test class for stress-testing the server in `test/test_server_stress.py`. Run it with:
 
 ```sh
-$ docker-compose run web make stress_test
+$ make stress_test
 ```
 
 These tests will:

@@ -1,4 +1,5 @@
 """The primary router for the Caching Service API v1."""
+import tempfile
 import json
 import flask
 import minio.error
@@ -43,8 +44,8 @@ def make_cache_id():
     except TypeError as err:
         result = {'status': 'error', 'error': str(err)}
         return flask.jsonify(result)
-    create_placeholder(cid, flask.session['token_id'])
-    result = {'cache_id': cid, 'status': 'generated'}
+    metadata = create_placeholder(cid, flask.session['token_id'])
+    result = {'cache_id': cid, 'status': 'ok', 'metadata': metadata}
     return flask.jsonify(result)
 
 
@@ -52,12 +53,13 @@ def make_cache_id():
 @requires_service_token
 def download_cache_file(cache_id):
     """Fetch a file given a cache ID."""
-    (path, parent_dir) = download_cache(cache_id, flask.session['token_id'])
+    save_dir = tempfile.mkdtemp()
+    path = download_cache(cache_id, flask.session['token_id'], save_dir)
 
     @flask.after_this_request
     def cleanup(response):
-        # Remove temporary files when the request is completed.
-        shutil.rmtree(parent_dir)
+        """Remove temporary files when the request is completed."""
+        shutil.rmtree(save_dir)
         return response
     return flask.send_file(path)
 
@@ -72,14 +74,14 @@ def upload_cache_file(cache_id):
     if not f.filename:
         return (flask.jsonify({'status': 'error', 'error': 'Filename missing'}), 400)
     upload_cache(cache_id, flask.session['token_id'], f)
-    return flask.jsonify({'status': 'saved'})
+    return flask.jsonify({'status': 'ok'})
 
 
 @api_v1.route('/cache/<cache_id>', methods=['DELETE'])
 @requires_service_token
 def delete(cache_id):
     delete_cache(cache_id, flask.session['token_id'])
-    return flask.jsonify({'status': 'deleted'})
+    return flask.jsonify({'status': 'ok'})
 
 
 # Error handlers

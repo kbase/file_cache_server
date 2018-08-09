@@ -27,30 +27,35 @@ except minio.error.BucketAlreadyExists:
 except minio.error.BucketAlreadyOwnedByYou:
     pass
 
-# This is how metadata is stored in minio files for 'expiration', 'filename', etc
-# For example if you set the metadata 'xyz_abc', then minio will store it as 'X-Amz-Meta-Xyz_abc'
-metadata_expiration_key = 'X-Amz-Meta-Expiration'
-metadata_filename_key = 'X-Amz-Meta-Filename'
-metadata_token_id_key = 'X-Amz-Meta-Token_id'
-
 
 def create_placeholder(cache_id, token_id):
     """
     Create a placeholder file for a generated cache_id using a token_id. The metadata on this
-    placeholder file can be used for later validating uploads.
+    placeholder file can be used for later validating uploads and checking expirations.
+
+    If a placeholder has already been created, but no file uploaded, then no action is taken and
+    'empty' is returned. If a cached file already exists, then no action is taken and 'file_exists'
+    is returned. If nothing at all exists at that cache ID, then the placeholder is created and
+    'empty' is returned.
 
     cache_id should be generated from caching_service.cache_id.generate_cache_id
     token_id hould be in the form of 'user:id'.
+
+    Returns one of "file_exists" or "empty", indicating whether that cache_id holds a saved file or is empty.
     """
-    seven_days = 604800  # in seconds
-    expiration = str(int(time.time() + seven_days))
-    metadata = {
-        'expiration': expiration,
-        'filename': 'placeholder',
-        'token_id': token_id
-    }
-    data = io.BytesIO()
-    minio_client.put_object(bucket_name, cache_id, data, 0, metadata=metadata)
+    try:
+        return get_metadata(cache_id)
+    except minio.error.NoSuchKey:
+        seven_days = 604800  # in seconds
+        expiration = str(int(time.time() + seven_days))
+        metadata = {
+            'expiration': expiration,
+            'filename': 'placeholder',
+            'token_id': token_id
+        }
+        data = io.BytesIO()  # Empty contents for placeholder cache
+        minio_client.put_object(bucket_name, cache_id, data, 0, metadata=metadata)
+        return metadata
 
 
 def authorize_access(cache_id, token_id):
@@ -60,8 +65,8 @@ def authorize_access(cache_id, token_id):
     This will raise caching_service.exceptions.UnauthorizedAccess if it is unauthorized.
     This will raise minio.error.NoSuchKey if the cache ID does not exist.
     """
-    stat = minio_client.stat_object(bucket_name, cache_id)
-    existing_token_id = stat.metadata[metadata_token_id_key]
+    metadata = get_metadata(cache_id)
+    existing_token_id = metadata['token_id']
     if token_id != existing_token_id:
         raise exceptions.UnauthorizedAccess('You do not have access to that cache')
 
@@ -95,34 +100,28 @@ def upload_cache(cache_id, token_id, file_storage):
 
 def expire_entries():
     """
-    Iterate over all expiration entries in the database, removing any expired caches.
+    Iterate over all expiration metadata for every file in the cache bucket, removing any expired caches.
     """
     print('Checking the expiration of all stored objects..')
     now = time.time()
     objects = minio_client.list_objects_v2(bucket_name)
     removed_count = 0
     total_count = 0
-
-    def remove_obj(oid, count):
-        """Remove an expired object."""
-        print('Removing', oid)
-        minio_client.remove_object(bucket_name, oid)
-        return count + 1
-
     for obj in objects:
-        # XXX it seems that the Minio client does not return metadata when listing objects
+        # It seems that the Minio client does not return metadata when listing objects
         # Issue here: https://github.com/minio/minio-py/issues/679
         # We have to fetch it separately
         total_count += 1
         metadata = get_metadata(obj.object_name)
-        if not metadata or (metadata_expiration_key not in metadata):
-            removed_count = remove_obj(obj.object_name, removed_count)
+        if not metadata or ('expiration' not in metadata):
+            minio_client.remove_object(bucket_name, obj.object_name)
+            removed_count += 1
         else:
-            expiry = int(metadata.get(metadata_expiration_key))
+            expiry = int(metadata.get('expiration'))
             if now > expiry:
-                removed_count = remove_obj(obj.object_name, removed_count)
-    print('... Finished running. Total objects: ' + str(total_count) +
-          '. Removed ' + str(removed_count) + ' objects.')
+                minio_client.remove_object(bucket_name, obj.object_name)
+                removed_count += 1
+    print('... Finished running. Total objects: {}. Removed {} objects'.format(total_count, removed_count))
     return (removed_count, total_count)
 
 
@@ -134,21 +133,17 @@ def delete_cache(cache_id, token_id):
 
 def get_metadata(cache_id):
     """Return the Minio metadata dict for a cache file."""
-    stat = minio_client.stat_object(bucket_name, cache_id)
-    return stat.metadata
+    orig_metadata = minio_client.stat_object(bucket_name, cache_id).metadata
+    # The below keys are how metadata gets stored in minio files for 'expiration', 'filename', etc
+    # For example if you set the metadata 'xyz_abc', then minio will store it as 'X-Amz-Meta-Xyz_abc'
+    return {
+        'expiration': orig_metadata['X-Amz-Meta-Expiration'],
+        'filename': orig_metadata['X-Amz-Meta-Filename'],
+        'token_id': orig_metadata['X-Amz-Meta-Token_id']
+    }
 
 
-def get_cache_filename(cache_id):
-    """
-    Given a cache ID, return the filename of the cached file.
-
-    This may raise a minio.error.NoSuchKey (missing cache).
-    """
-    metadata = get_metadata(cache_id)
-    return metadata[metadata_filename_key]
-
-
-def download_cache(cache_id, token_id):
+def download_cache(cache_id, token_id, save_dir):
     """
     Download a file from a cache ID to a temp directory and path.
 
@@ -162,13 +157,10 @@ def download_cache(cache_id, token_id):
     occurs, all temporary files will get cleaned up.
     """
     authorize_access(cache_id, token_id)
-    tmp_dir = tempfile.mkdtemp()
-    filename = get_cache_filename(cache_id)
-    save_path = os.path.join(tmp_dir, filename)
-    try:
-        minio_client.fget_object(Config.minio_bucket_name, cache_id, save_path)
-    except Exception as err:
-        # Remove temporary files
-        shutil.rmtree(tmp_dir)
-        raise err
-    return (save_path, tmp_dir)
+    metadata = get_metadata(cache_id)
+    filename = metadata['filename']
+    if not filename or filename == 'placeholder':
+        raise exceptions.MissingCache(cache_id)
+    save_path = os.path.join(save_dir, filename)
+    minio_client.fget_object(Config.minio_bucket_name, cache_id, save_path)
+    return save_path
