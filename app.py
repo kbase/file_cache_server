@@ -31,6 +31,11 @@ def root():
     })
 
 
+@app.errorhandler(404)
+def page_not_found(err):
+    return (flask.jsonify({'status': 'error'}), 404)
+
+
 @app.errorhandler(Exception)
 def general_exception_handler(err):
     """General exception handler; catch any exception from anywhere."""

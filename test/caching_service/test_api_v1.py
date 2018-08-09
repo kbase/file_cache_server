@@ -200,7 +200,7 @@ class TestApiV1(unittest.TestCase):
         GET /cache/<cache_id>
         """
         cache_id = str(uuid4())
-        minio.create_placeholder(cache_id, 'test_user:x')
+        minio.create_placeholder(cache_id, 'test_user')
         resp = requests.get(
             url + '/cache/' + cache_id,
             headers={'Authorization': auth}
@@ -250,7 +250,7 @@ class TestApiV1(unittest.TestCase):
         POST /cache/<cache_id>
         """
         cache_id = str(uuid4())
-        minio.create_placeholder(cache_id, 'test_user:x')
+        minio.create_placeholder(cache_id, 'test_user')
         resp = requests.post(
             url + '/cache/' + cache_id,
             headers={'Authorization': auth},
@@ -320,7 +320,7 @@ class TestApiV1(unittest.TestCase):
         DELETE /cache/<cache_id>
         """
         cache_id = str(uuid4())
-        minio.create_placeholder(cache_id, 'test_user:x')
+        minio.create_placeholder(cache_id, 'test_user')
         resp = requests.delete(
             url + '/cache/' + cache_id,
             headers={'Authorization': auth}
