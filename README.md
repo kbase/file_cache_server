@@ -176,6 +176,7 @@ MINIO_ACCESS_KEY=minio
 MINIO_HOST=minio:9000
 MINIO_BUCKET_NAME=kbase-cache
 PYTHONUNBUFFERED=true
+KBASE_AUTH_URL="https://ci.kbase.us/services/auth"
 KBASE_AUTH_TOKEN=<your_auth_token>
 ```
 
