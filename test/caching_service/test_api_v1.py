@@ -97,7 +97,7 @@ class TestApiV1(unittest.TestCase):
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(json['status'], 'generated', 'Status is "generated"')
+        self.assertEqual(json['status'], 'ok', 'Status is "generated"')
         self.assertEqual(len(json['cache_id']), 64, 'Creates 64-byte cache ID')
 
     def test_make_cache_id_malformed_json(self):
@@ -241,7 +241,7 @@ class TestApiV1(unittest.TestCase):
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(json['status'], 'saved')
+        self.assertEqual(json['status'], 'ok')
 
     def test_upload_cache_file_unauthorized_cache(self):
         """
@@ -308,7 +308,7 @@ class TestApiV1(unittest.TestCase):
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 200, 'Status code is 200')
-        self.assertEqual(json['status'], 'deleted', 'Status is "deleted"')
+        self.assertEqual(json['status'], 'ok', 'Status is "deleted"')
         # Test that the cache is inaccessible
         with self.assertRaises(NoSuchKey):
             minio.get_metadata(cache_id)
