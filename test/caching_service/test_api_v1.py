@@ -14,7 +14,7 @@ from minio.error import NoSuchKey
 import caching_service.minio as minio
 
 url = 'http://web:5000/v1'
-auth = os.environ['KBASE_AUTH_TOKEN']
+auth = os.environ['KB_AUTH_TOKEN']
 
 
 @functools.lru_cache()

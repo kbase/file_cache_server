@@ -177,13 +177,13 @@ MINIO_HOST=minio:9000
 MINIO_BUCKET_NAME=kbase-cache
 PYTHONUNBUFFERED=true
 KBASE_AUTH_URL="https://ci.kbase.us/services/auth"
-KBASE_AUTH_TOKEN=<your_auth_token>
+KB_AUTH_TOKEN=<your_auth_token>
 ```
 
 - `PYTHONUNBUFFERED` is useful for debug logging and can be left out of production.
 - The three `MINIO_*` vars are set up in the `docker-compose.yaml` file and are only for development.
 - `SECRET_KEY` is used by flask for signing cookies (and is also used by flask plugins). In production, this should be private and unguessable.
-- `KBASE_AUTH_TOKEN` is used to run tests and is not necessary in production.
+- `KB_AUTH_TOKEN` is used to run tests and is not needed for deployment
 
 ### Building and running
 
