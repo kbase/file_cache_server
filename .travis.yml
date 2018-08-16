@@ -4,7 +4,7 @@ services:
 language: python
 script:
 - cp .env.example .env
-- docker-compose up
+- docker-compose run make test_local
 - make test
 env:
   global:
