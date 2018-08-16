@@ -11,6 +11,8 @@ services:
     environment:
       KB_AUTH_TOKEN: ${KB_AUTH_TOKEN}
       SECRET_KEY: ${SECRET_KEY}
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     ports:
       - "5000:5000"
     volumes:
