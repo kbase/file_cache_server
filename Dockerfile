@@ -15,7 +15,8 @@ WORKDIR /app
 RUN MINIO=`grep minio requirements.txt` && \
     pip install $MINIO && \
     grep >requirements.conda -v $MINIO requirements.txt && \
-    conda install --yes -c conda-forge --file requirements.conda
+    conda install --yes -c conda-forge --file requirements.conda && \
+    pip install -r dev-requirements.txt
 
 # Run the app
 COPY . /app
