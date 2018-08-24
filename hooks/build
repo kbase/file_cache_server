@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # See the docs for automated docker builds: https://docs.docker.com/docker-cloud/builds/advanced/
 
