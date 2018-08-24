@@ -87,7 +87,7 @@ _Tools_
 
 Cache entries are identified by:
 
-* Auth token username
+* Username that generated the provided auth token
 * Arbitrary set of identifying JSON data representing the environment, module, parameters, user ID, etc. of your
   cache value.
 
