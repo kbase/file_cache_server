@@ -1,5 +1,7 @@
 #!/bin/bash -x
 
+# See the docs for automated docker builds: https://docs.docker.com/docker-cloud/builds/advanced/
+
 # $IMAGE_NAME var is injected into the build so the tag is correct.
 
 echo "Build hook running"
