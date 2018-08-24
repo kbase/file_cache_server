@@ -2,7 +2,9 @@
 
 Generic file-caching service for the KBase platform, allowing you to save the results of long-running jobs so you don't have repeat them unnecessarily.
 
-For example, KBase probably sequences the same E. coli contigs multiple times per day. If your app uses this service, then you can save the file ouput of a job given certain parameters so that you don't have to re-run the job.
+For example, you might want to run a preprocessing algorithm on some fasta files to make them searchable. You don't want to have to do the same preprocessing on those files over and over again, and instead want to fetch previous results that you've already generated. If your app uses this service, then you can save the file ouput of a job given certain parameters and fetch that same output later given the same parameters.
+
+It's important to note that this is only useful if the time it takes to generate a file is going to be longer than it takes to download the file from this service.
 
 _Typical workflow:_
 
@@ -161,6 +163,59 @@ Sample failed response:
   "status": "error",
   "error": "Message describing what went wrong"
 }
+```
+
+## Python example
+
+_Generate a cache ID_
+
+```py
+# Be sure to set up my_service_token as a KBase authorization token
+headers = {'Content-Type': 'application/json', 'Authorization': my_service_token}
+# Arbitrary cache identification data
+cache_data = {'method': 'method_name': 'params': 'xyz'}
+endpoint = caching_server_url + '/cache_id'
+resp_json = requests.post(endpoint, data=json.dumps(cache_data), headers=headers).json()
+if resp_json.get('error'):
+    # Some error message was received
+    raise Exception(resp_json['error'])
+# Success!
+cache_id = resp_json['cache_id']
+```
+
+_Upload a file to a cache_
+
+```py
+endpoint = caching_server_url + '/cache/' + cache_id
+# Open a file as byte encoded and use the `files` option in requests
+with open('my-file.txt', 'rb') as fd_read:
+    resp_json = requests.post(
+        endpoint,
+        files={'file': fd_read},
+        headers={'Authorization': my_service_token}
+    ).json()
+if resp_json['status'] == 'error':
+    # Some error message was received
+    raise Exception(resp_json['error'])
+```
+
+_Download a file from a cache_
+
+In this example, we stream the cache data to a local file
+
+```py
+endpoint = caching_server_url + '/cache/' + cache_id
+resp = requests.get(endpoint, headers={'Authorization': my_service_token}, stream=True)
+if resp.status_code == 200:
+    # Success! Download the file in chunks to save memory
+    with open(local_file_path, 'wb') as fd_write:
+        for chunk in resp.iter_content():
+            fd_write.write(chunk)
+    return local_file_path
+else resp.status_code == 404:
+    print('cache does not exist')
+else:
+    print('some other error; check the response')
 ```
 
 ## Development
