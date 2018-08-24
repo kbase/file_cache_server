@@ -1,22 +1,20 @@
 FROM kbase/kb_python:python3
 
+ARG DEVELOPMENT
 ARG BUILD_DATE
 ARG VCS_REF
 ARG BRANCH=develop
 ENV LANG C.UTF-8
 
-COPY requirements.txt /app/requirements.txt
-COPY dev-requirements.txt /app/dev-requirements.txt
+COPY ./*requirements*.txt /app/
 WORKDIR /app
 
-# Unfortunately conda doesn't have the minio python clients
-# so break that out of the requirements, and install that with
-# pip and install the rest using conda
-RUN MINIO=`grep minio requirements.txt` && \
-    pip install $MINIO && \
-    grep >requirements.conda -v $MINIO requirements.txt && \
-    conda install --yes -c conda-forge --file requirements.conda && \
-    pip install -r dev-requirements.txt
+# Install all the python dependencies
+# Dependencies are listed in files with the format <package-manager>-requirements-<env>.txt
+# If the "-<env>" part is not in the filename, then those requirements are installed in every env.
+RUN pip install -r pip-requirements.txt && \
+    if [ "$DEVELOPMENT" ]; then pip install -r pip-requirements-dev.txt; fi && \
+    conda install --yes -c conda-forge --file conda-requirements.txt
 
 # Run the app
 COPY . /app

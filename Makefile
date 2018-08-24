@@ -1,9 +1,16 @@
-.PHONY: test publish serve stress_test
+.PHONY: test test-local stress-test stress-test-local dev-server dev-build
+
+dev-server:
+	DEVELOPMENT=1 docker-compose up
+
+dev-build:
+	docker-compose down
+	docker-compose build --build-arg DEVELOPMENT=1 --no-cache web
 
 test:
-	docker-compose run web make test_local
+	docker-compose run web make test-local
 
-test_local:
+test-local:
 	flake8 --max-complexity 5 app.py
 	flake8 --max-complexity 5 caching_service
 	flake8 test
@@ -18,8 +25,8 @@ test_local:
 	coverage html -d coverage_report/
 	echo "Generated HTML coverage report to ./coverage_report/index.html"
 
-stress_test:
-	docker-compose run web make stress_test_local
+stress-test:
+	docker-compose run web make stress-test-local
 
-stress_test_local:
+stress-test-local:
 	python -m unittest test/test_server_stress.py

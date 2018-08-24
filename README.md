@@ -218,42 +218,34 @@ else:
     print('some other error; check the response')
 ```
 
-## Development
+## Development & deployment
 
-### Environment setup
+### Production deployment
 
-Create a file called `.env` in the root of the project with the following values:
+Copy `.env.production.example` into `.env` and set up some secure secret keys.
 
-```
-SECRET_KEY=xyz
-MINIO_SECRET_KEY=minio123
-MINIO_ACCESS_KEY=minio
-MINIO_HOST=minio:9000
-MINIO_BUCKET_NAME=kbase-cache
-PYTHONUNBUFFERED=true
-KBASE_AUTH_URL="https://ci.kbase.us/services/auth"
-KB_AUTH_TOKEN=<your_auth_token>
-```
 
-- `PYTHONUNBUFFERED` is useful for debug logging and can be left out of production.
-- The three `MINIO_*` vars are set up in the `docker-compose.yaml` file and are only for development.
-- `SECRET_KEY` is used by flask for signing cookies (and is also used by flask plugins). In production, this should be private and unguessable.
-- `KB_AUTH_TOKEN` is used to run tests and is not needed for deployment
 
-### Building and running
+### Development and tests
 
-With Docker and docker-compose installed, simply do:
+Copy `.env.development.example` into `.env` and run the following
 
 ```sh
-$ docker-compose up
+$ make dev-server
 ```
 
-If your docker build becomes corrupted and you're having a hard time troubleshooting, try doing a hard reset:
+To rebuild the web server (eg. after adding a new dependency), run:
 
 ```sh
-$ docker-compose down --rmi all -v --remove-orphans
-$ docker-compose build --no-cache
-$ docker-compose up
+$ make dev-build
+```
+
+Note that you must set the env var `DEVELOPMENT` in order to get the python dev requirements to install, which are required for running tests.
+
+Once the servers are up and running, you can run tests in another terminal:
+
+```sh
+$ make test
 ```
 
 ### Bucket setup
@@ -286,16 +278,6 @@ Delete all expired cache entries with:
 
 ```
 $ docker-compose run web python admin.py expire_all
-```
-
-### Tests
-
-Set an env var for `KBASE_AUTH_TOKEN` before running the tests (you can put this in your `.env` file).
-
-While the server is running, do:
-
-```sh
-$ make test
 ```
 
 #### Stress tests
@@ -335,14 +317,15 @@ _Dependencies:_
 
 This project makes heavy use of [Minio](https://docs.minio.io/) using the Python Minio client.
 
-* `requirements.txt` lists all pip requirements for running the server
-* `dev-requirements.txt` lists all requirements for running the tests
+* `pip-requirements.txt` lists all pip requirements for running the server in all environments
+* `pip-requirements-dev.txt` lists all pip requirements for running the server in the development environment
+* `conda-requirements.txt` lists all conda requirements for running the server in all environments
 
-If you install any new dependencies, be sure to re-run `docker-compose build`.
+If you install any new dependencies, be sure to re-run `DEVELOPMENT=1 docker-compose up --build`.
 
 Docker:
 
-* `docker-compose.yaml` and `/docker/Dockerfile-*` contain docker setup for all services
+* `docker-compose.yaml` and `./Dockerfile` contain docker setup for all services
 
 
 ## References
