@@ -4,9 +4,7 @@ services:
 
   # For running the Flask server
   web:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile-python
+    build: .
     env_file: .env
     environment:
       KB_AUTH_TOKEN: ${KB_AUTH_TOKEN}
