@@ -15,4 +15,4 @@ class Config:
     minio_secret_key = os.environ['MINIO_SECRET_KEY']
     minio_https = os.environ.get('MINIO_SECURE', False)
     # KBase authentication URL
-    kbase_auth_url = os.environ.get('KBASE_AUTH_URL', 'https://kbase.us/services/auth')
+    kbase_auth_url = os.environ.get('KBASE_AUTH_URL', 'https://ci.kbase.us/services/auth')
