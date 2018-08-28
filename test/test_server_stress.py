@@ -24,7 +24,7 @@ class TestServerStress(unittest.TestCase):
 
     def setUp(self):
         self.base_url = 'http://web:5000'
-        self.token = os.environ['KB_AUTH_TOKEN']
+        self.token = os.environ['KB_SERVICE_TOKEN']
 
     def test_large_files(self):
         """Test Minio by uploading a several very large files at once."""
