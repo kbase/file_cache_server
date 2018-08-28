@@ -14,7 +14,7 @@ from minio.error import NoSuchKey
 import caching_service.minio as minio
 
 url = 'http://web:5000/v1'
-auth = os.environ['KB_AUTH_TOKEN']
+auth = os.environ['KB_SERVICE_TOKEN']
 
 
 @functools.lru_cache()
@@ -26,6 +26,8 @@ def get_cache_id(cache_params=None):
         headers={'Authorization': auth, 'Content-Type': 'application/json'},
         data=cache_params
     )
+    print('-' * 80)
+    print('Response: ' + resp.text)
     json = resp.json()
     cache_id = json['cache_id']
     return cache_id
