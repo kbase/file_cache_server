@@ -25,7 +25,11 @@ def requires_service_token(fn):
         auth_json = auth_resp.json()
         if 'error' in auth_json:
             raise UnauthorizedAccess(auth_json['error']['message'])
-            resp = {'error': auth_json['error']['message'], 'status': 'error'}
+            resp = {
+                'error': auth_json['error']['message'],
+                'status': 'error',
+                'auth_endpoint': Config.kbase_auth_url
+            }
             return (flask.jsonify(resp), 403)
         else:
             token_id = ':'.join([Config.kbase_auth_url, auth_json['user']])
