@@ -1,14 +1,14 @@
 sudo: required
 services:
-  - docker
+- docker
 language: python
 python:
-  - "3.6"
+- '3.6'
 script:
-  - cp .env.development.example .env
-  - docker-compose build --build-arg DEVELOPMENT=1 web
-  - docker-compose up -d
-  - make test
+- cp .env.development.example .env
+- docker-compose build --build-arg DEVELOPMENT=1 web
+- docker-compose up -d
+- make test
 env:
   global:
-    - secure: iB0waFTRbJPgxqpf7q2Ow/j+Ka00/G6TeW12StsfN84l0QgbvJF15nmGoLWLswKkihMUOvJXzP9Nu82R60IRH4Dn0xmI4zJGiogdkfrTXH6raCZX+q/+KSj5J7octCsh7K61UjyOSvY3bjK9omlbMxFHqzJW5YhrfaVXBAReyoxltXhGx6oMVR8NhiRA0+vkYNJbQNxAfcIRBHsUMUczmmVp0I76hOy4M6r8DTSlYylUC/XOiGwaKzfdBke+e9x6R6HCKYoDFwDt05zhf+5GaOYEyOvk4knm+rDODXwzQt/O8dua371Bk7x+l6UowVtBvcM3i4k1IESK5KudBBJKvGEPKyQr56Atc8NdSlSypz7B9ZSCcx8tUGwDtiYIsgh+3bkvy2I4aAaVbrw3P+phil6tipWjMbuSLo5m8OnahNJfIN9cyos/uI6SAb7sCCYtt6X/9k6bNUysJ5UktsSwa17tbkuxwjRKygCd4VSJgjPd96lc7cvxXHS/ZJ1WZizhiK7xXW/jyzKBi/IJQ0aJQVaCC31hMXrX6Y6pRa1h54Bautz9Y3qrq5sPuUZcAnMYaCIu6I/20zEyfBJZJH5NY4VjazZgRPt12gfQNiu9GFpx0hhEv3MT/IwMr+VFui9IvtwfoRXtaChhel6CnM7ZllLL271LpjMO0csXNgjbne4=
+  - secure: ZSM2irv/ho7woZBlq+VPSI/yIynkqcMJvAOPBbZgPnFlAJfQ7vEznNorgWXztNLV8WPggBOfvmzk6X1jJRFUuPUvXTl0qgdLrak26HeTk6L9XlBwCCz+IX9JvOQihAU8LNcUXYDJlADhQutT9iiGGQ/ejBrRzWstfLgHb3V5bIMzfh0tEFTW2l51qSjWCUh9q+T/4HAfyrR7rhc5wIcXMW0iFZpGKCMpXEEO0bMILrN+eMmPElU9wF8furEQeIrhCJtjNnGKC6fB7T6/u0+yQ+WOfDRmW3aXyDL6Yj8cJrWVxU8Cyh+acCFnxLFEAp8YwSnhXbYWMA6UZ+RFCoaG3eEI076Z+BYSfwwr0BQCnaKb6avFJJTvWlf3hTxE7gszvfrpxI2NQUh7uAzAPfUvn34/wMTDQoj58MbHNZKdN7U0q+VeBV3BObhz0RJJquWcZUML6szMTm2PALTOwqjDdgMmvPPXQgbgFt1WWu383qwJI5Loqs61JHg3yrwJj3aOGXSKolXtjFXKkG9D5dBpXGve7ePV2AI165ioJ7FyhcuZ95iHM6Etg+a8Jws1BlDH/L5+I/cXHp5DQn/qXOnjs1OFFo4Iskd2quvlh+/ob5SzgfyoVO1n+l+Ed8Gbypfy1e1SHzf/LIPGeY+c/jRyfXODoEZHXL9p2bVj5rV8Dj4=
