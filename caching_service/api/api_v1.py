@@ -1,4 +1,6 @@
 """The primary router for the Caching Service API v1."""
+import time
+import subprocess  # nosec B404
 import tempfile
 import json
 import flask
@@ -30,7 +32,7 @@ def root():
             'delete_cache_file': 'DELETE /cache/<cache_id>'
         }
     }
-    return flask.jsonify(resp)
+    return json_response(resp)
 
 
 @api_v1.route('/cache_id', methods=['POST'])
@@ -43,10 +45,10 @@ def make_cache_id():
         cid = generate_cache_id(flask.session['token_id'], get_json())
     except TypeError as err:
         result = {'status': 'error', 'error': str(err)}
-        return flask.jsonify(result)
+        return json_response(result)
     metadata = create_placeholder(cid, flask.session['token_id'])
     result = {'cache_id': cid, 'status': 'ok', 'metadata': metadata}
-    return flask.jsonify(result)
+    return json_response(result)
 
 
 @api_v1.route('/cache/<cache_id>', methods=['GET'])
@@ -69,19 +71,19 @@ def download_cache_file(cache_id):
 def upload_cache_file(cache_id):
     """Upload a file given a cache ID."""
     if 'file' not in flask.request.files:
-        return (flask.jsonify({'status': 'error', 'error': 'File field missing'}), 400)
+        return (json_response({'status': 'error', 'error': 'File field missing'}), 400)
     f = flask.request.files['file']
     if not f.filename:
-        return (flask.jsonify({'status': 'error', 'error': 'Filename missing'}), 400)
+        return (json_response({'status': 'error', 'error': 'Filename missing'}), 400)
     upload_cache(cache_id, flask.session['token_id'], f)
-    return flask.jsonify({'status': 'ok'})
+    return json_response({'status': 'ok'})
 
 
 @api_v1.route('/cache/<cache_id>', methods=['DELETE'])
 @requires_service_token
 def delete(cache_id):
     delete_cache(cache_id, flask.session['token_id'])
-    return flask.jsonify({'status': 'ok'})
+    return json_response({'status': 'ok'})
 
 
 # Error handlers
@@ -92,7 +94,7 @@ def delete(cache_id):
 def missing_cache_file(err):
     """A cache ID was not found, but was expected to exist."""
     result = {'status': 'error', 'error': 'Cache ID not found'}
-    return (flask.jsonify(result), 404)
+    return (json_response(result), 404)
 
 
 # General, small route helpers
@@ -111,3 +113,16 @@ def check_header_present(name):
 
 def get_json():
     return json.loads(flask.request.data)  # Throws a JSONDecodeError
+
+
+def json_response(data):
+    """Expand any json response with additional generic data."""
+    args = ['git', 'rev-parse', '--short', 'HEAD']
+    # Get the git commit hash (short) and strip the newline at the end
+    git_commit_ver = subprocess.check_output(args)[0:-1]  # nosec B603, B607
+    data.update({
+        'ver': 1,
+        'ver_hash': git_commit_ver,
+        'response_timestamp': time.time()
+    })
+    return flask.jsonify(data)
