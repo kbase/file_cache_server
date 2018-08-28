@@ -123,6 +123,6 @@ def json_response(data):
     data.update({
         'ver': 1,
         'ver_hash': git_commit_ver,
-        'response_timestamp': time.time()
+        'response_timestamp': int(time.time() * 1000)
     })
     return flask.jsonify(data)
