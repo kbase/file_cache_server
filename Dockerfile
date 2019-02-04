@@ -6,8 +6,6 @@ ARG VCS_REF
 ARG BRANCH=develop
 ENV LANG C.UTF-8
 
-RUN echo "DEVELOPMENT $DEVELOPMENT"
-
 RUN apt-get update && apt-get install -y wget
 
 COPY ./*requirements*.txt /app/
