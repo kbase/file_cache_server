@@ -5,7 +5,6 @@ language: python
 python:
 - '3.6'
 script:
-- cp .env.development.example .env
 - docker-compose build --build-arg DEVELOPMENT=1 web
 - docker-compose up -d
 - make test
