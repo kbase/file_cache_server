@@ -100,7 +100,7 @@ class TestApiV1(unittest.TestCase):
         json = resp.json()
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(json['status'], 'ok', 'Status is "generated"')
-        self.assertEqual(len(json['cache_id']), 64, 'Creates 64-byte cache ID')
+        self.assertEqual(len(json['cache_id']), 128, 'Creates 128-byte cache ID')
 
     def test_make_cache_id_malformed_json(self):
         """
