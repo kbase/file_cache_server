@@ -6,7 +6,6 @@ import hashlib
 def bhash(string):
     """
     Given any string, produce a hex-valued hash.
-    The hash will be 64 bytes long.
     Docs on blake2b: https://docs.python.org/3/library/hashlib.html#hashlib.blake2b
     """
     if not string or not isinstance(string, str):
