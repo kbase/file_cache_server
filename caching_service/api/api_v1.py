@@ -1,6 +1,4 @@
 """The primary router for the Caching Service API v1."""
-import time
-import subprocess  # nosec B404
 import tempfile
 import json
 import flask
@@ -117,12 +115,4 @@ def get_json():
 
 def json_response(data):
     """Expand any json response with additional generic data."""
-    args = ['git', 'rev-parse', '--short', 'HEAD']
-    # Get the git commit hash (short) and strip the newline at the end
-    git_commit_ver = subprocess.check_output(args)[0:-1]  # nosec B603, B607
-    data.update({
-        'ver': 1,
-        'ver_hash': git_commit_ver,
-        'response_timestamp': int(time.time() * 1000)
-    })
     return flask.jsonify(data)

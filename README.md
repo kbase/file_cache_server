@@ -118,9 +118,7 @@ Sample failed response:
 Sample request:
 
 ```sh
-curl -X GET
-     -H "Authorization: <service_auth_token>"
-     -F "file=@myfile.zip"
+curl -X GET -H "Authorization: <service_auth_token>"
      https://<caching_service_host>/v1/cache/<cache_id>
 ```
 
@@ -223,8 +221,6 @@ else:
 ### Production deployment
 
 Copy `.env.production.example` into `.env` and set up some secure secret keys.
-
-
 
 ### Development and tests
 

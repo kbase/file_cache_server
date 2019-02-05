@@ -1,0 +1,8 @@
+minio==4.0.11
+Flask==1.0.2
+gunicorn==19.9.0
+gevent==1.4.0
+simplejson==3.16.0
+python-dotenv==0.10.1
+requests==2.21.0
+docopt==0.6.2

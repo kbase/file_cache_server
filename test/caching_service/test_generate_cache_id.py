@@ -10,7 +10,7 @@ class TestMinio(unittest.TestCase):
         token_id = 'url:user:name'
         json_data = {'xyz': 123}
         cid = generate_cache_id(token_id, json_data)
-        self.assertEqual(len(cid), 64, 'Creates 64-byte hash')
+        self.assertEqual(len(cid), 128, 'Creates 128-byte hash')
 
     def test_empty_json(self):
         """Pass an empty json data hash and check for the error."""

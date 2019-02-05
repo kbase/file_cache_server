@@ -1,4 +1,4 @@
-FROM kbase/kb_python:python3
+FROM python:3.7-slim
 
 ARG DEVELOPMENT
 ARG BUILD_DATE
@@ -6,15 +6,19 @@ ARG VCS_REF
 ARG BRANCH=develop
 ENV LANG C.UTF-8
 
+# Dockerize installation
+RUN apt-get update && apt-get install -y wget
+ENV DOCKERIZE_VERSION v0.6.1
+RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
+    && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
+    && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+
 COPY ./*requirements*.txt /app/
 WORKDIR /app
 
 # Install all the python dependencies
-# Dependencies are listed in files with the format <package-manager>-requirements-<env>.txt
-# If the "-<env>" part is not in the filename, then those requirements are installed in every env.
-RUN pip install -r pip-requirements.txt && \
-    if [ "$DEVELOPMENT" ]; then pip install -r pip-requirements-dev.txt; fi && \
-    conda install --yes -c conda-forge --file conda-requirements.txt
+RUN pip install -r requirements.txt && \
+    if [ "$DEVELOPMENT" ]; then pip install -r dev-requirements.txt; fi
 
 # Run the app
 COPY . /app
@@ -26,5 +30,6 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       us.kbase.vcs-branch=$BRANCH \
       maintainer="Steve Chan sychan@lbl.gov"
 
-ENTRYPOINT [ "/kb/deployment/bin/dockerize" ]
-CMD ["gunicorn", "--worker-class", "gevent", "--timeout", "1800", "--workers", "17", "-b", ":5000", "--reload", "app:app"]
+EXPOSE 5000
+ENTRYPOINT [ "/usr/local/bin/dockerize" ]
+CMD ["sh", "scripts/start_server.sh"]
