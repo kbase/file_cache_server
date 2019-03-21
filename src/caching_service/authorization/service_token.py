@@ -3,8 +3,8 @@ import flask
 import functools
 import requests
 
-from caching_service.config import Config
-from caching_service.exceptions import MissingHeader, UnauthorizedAccess
+from ..config import Config
+from ..exceptions import MissingHeader, UnauthorizedAccess
 
 
 def requires_service_token(fn):

@@ -8,8 +8,8 @@ from minio.error import NoSuchKey
 from uuid import uuid4
 import tempfile
 
-import caching_service.minio as minio
-import caching_service.exceptions as exceptions
+import src.caching_service.minio as minio
+import src.caching_service.exceptions as exceptions
 
 
 class TestMinio(unittest.TestCase):

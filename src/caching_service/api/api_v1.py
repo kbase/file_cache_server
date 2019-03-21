@@ -5,10 +5,10 @@ import flask
 import minio.error
 import shutil
 
-from caching_service.authorization.service_token import requires_service_token
-from caching_service.generate_cache_id import generate_cache_id
-import caching_service.exceptions as exceptions
-from caching_service.minio import (
+from ..authorization.service_token import requires_service_token
+from ..generate_cache_id import generate_cache_id
+from .. import exceptions
+from ..minio import (
     download_cache,
     upload_cache,
     create_placeholder,
@@ -30,7 +30,7 @@ def root():
             'delete_cache_file': 'DELETE /cache/<cache_id>'
         }
     }
-    return json_response(resp)
+    return flask.jsonify(resp)
 
 
 @api_v1.route('/cache_id', methods=['POST'])
@@ -43,10 +43,10 @@ def make_cache_id():
         cid = generate_cache_id(flask.session['token_id'], get_json())
     except TypeError as err:
         result = {'status': 'error', 'error': str(err)}
-        return json_response(result)
+        return flask.jsonify(result)
     metadata = create_placeholder(cid, flask.session['token_id'])
     result = {'cache_id': cid, 'status': 'ok', 'metadata': metadata}
-    return json_response(result)
+    return flask.jsonify(result)
 
 
 @api_v1.route('/cache/<cache_id>', methods=['GET'])
@@ -69,19 +69,19 @@ def download_cache_file(cache_id):
 def upload_cache_file(cache_id):
     """Upload a file given a cache ID."""
     if 'file' not in flask.request.files:
-        return (json_response({'status': 'error', 'error': 'File field missing'}), 400)
+        return (flask.jsonify({'status': 'error', 'error': 'File field missing'}), 400)
     f = flask.request.files['file']
     if not f.filename:
-        return (json_response({'status': 'error', 'error': 'Filename missing'}), 400)
+        return (flask.jsonify({'status': 'error', 'error': 'Filename missing'}), 400)
     upload_cache(cache_id, flask.session['token_id'], f)
-    return json_response({'status': 'ok'})
+    return flask.jsonify({'status': 'ok'})
 
 
 @api_v1.route('/cache/<cache_id>', methods=['DELETE'])
 @requires_service_token
 def delete(cache_id):
     delete_cache(cache_id, flask.session['token_id'])
-    return json_response({'status': 'ok'})
+    return flask.jsonify({'status': 'ok'})
 
 
 # Error handlers
@@ -92,7 +92,7 @@ def delete(cache_id):
 def missing_cache_file(err):
     """A cache ID was not found, but was expected to exist."""
     result = {'status': 'error', 'error': 'Cache ID not found'}
-    return (json_response(result), 404)
+    return (flask.jsonify(result), 404)
 
 
 # General, small route helpers
@@ -111,8 +111,3 @@ def check_header_present(name):
 
 def get_json():
     return json.loads(flask.request.data)  # Throws a JSONDecodeError
-
-
-def json_response(data):
-    """Expand any json response with additional generic data."""
-    return flask.jsonify(data)

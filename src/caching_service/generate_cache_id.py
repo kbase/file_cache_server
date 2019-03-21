@@ -2,7 +2,7 @@
 Generate a cache ID from a service token and JSON.
 """
 import json
-from caching_service.hash import bhash
+from .hash import bhash
 
 
 # Validate the JSON

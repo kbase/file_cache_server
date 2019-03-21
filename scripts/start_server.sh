@@ -13,4 +13,5 @@ gunicorn \
   --workers $workers \
   --bind :5000 \
   ${DEVELOPMENT:+"--reload"} \
+  src.caching_service.server:app
   app:app

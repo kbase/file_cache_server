@@ -9,17 +9,12 @@ services:
       args:
         DEVELOPMENT: 1
     environment:
-      - FLASK_ENV=development
-      - SECRET_KEY=xyz
+      - DEVELOPMENT=1
       - MINIO_ACCESS_KEY=minio
       - MINIO_SECRET_KEY=minio123
-      - MINIO_HOST=minio:9000
-      - MINIO_BUCKET_NAME=kbase-cache
       - PYTHONUNBUFFERED=1
-      - KBASE_AUTH_URL=https://ci.kbase.us/services/auth
-    env_file: .env
     ports:
-      - "5001:5000"
+      - "5000:5000"
     volumes:
       - .:/app
 
@@ -40,6 +35,12 @@ services:
     image: minio/mc
     volumes:
       - data:/data
+
+  # A mock kbase auth server (see src/test/mock_auth/endpoints.json)
+  auth:
+    image: mockservices/mock_json_service
+    volumes:
+      - ${PWD}/src/test/mock_auth:/config
 
 volumes:
   data:

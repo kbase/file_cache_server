@@ -5,12 +5,12 @@ import traceback
 from werkzeug.exceptions import MethodNotAllowed
 from json.decoder import JSONDecodeError
 
-from caching_service.api.api_v1 import api_v1
-from caching_service.exceptions import MissingHeader, InvalidContentType, UnauthorizedAccess
-from caching_service.config import Config
+from .api.api_v1 import api_v1
+from .exceptions import MissingHeader, InvalidContentType, UnauthorizedAccess
+from .config import Config
 
 app = flask.Flask(__name__)
-app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', True)
+app.config['DEBUG'] = os.environ.get('DEVELOPMENT')
 app.config['SECRET_KEY'] = Config.secret_key
 app.url_map.strict_slashes = False  # allow both `get /v1/` and `get /v1`
 

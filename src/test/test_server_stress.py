@@ -24,7 +24,6 @@ class TestServerStress(unittest.TestCase):
 
     def setUp(self):
         self.base_url = 'http://web:5000'
-        self.token = os.environ['KB_SERVICE_TOKEN']
 
     def test_large_files(self):
         """Test Minio by uploading a several very large files at once."""
@@ -37,18 +36,18 @@ class TestServerStress(unittest.TestCase):
             files = {'file': f}
             response = requests.post(
                 self.base_url + '/v1/cache_id',
-                headers={'Authorization': self.token, 'Content-Type': 'application/json'},
+                headers={'Authorization': 'non_admin_token', 'Content-Type': 'application/json'},
                 data='{"xyz": 123}'
             )
             cache_id = response.json()['cache_id']
             requests.post(
                 self.base_url + '/v1/cache/' + cache_id,
                 files=files,
-                headers={'Authorization': self.token}
+                headers={'Authorization': 'non_admin_token'}
             )
         requests.delete(
             self.base_url + '/v1/cache/' + cache_id,
-            headers={'Authorization': self.token}
+            headers={'Authorization': 'non_admin_token'}
         )
         time_diff = time.time() - start
         print('Total time for one file: ' + str(time_diff))
@@ -61,7 +60,7 @@ class TestServerStress(unittest.TestCase):
         for idx in range(concurrent_files):
             req = grequests.post(
                 self.base_url + '/v1/cache_id',
-                headers={'Authorization': self.token, 'Content-Type': 'application/json'},
+                headers={'Authorization': 'non_admin_token', 'Content-Type': 'application/json'},
                 data='{"xyz":"' + str(uuid4()) + '"}'
             )
             reqs.append(req)
@@ -75,7 +74,7 @@ class TestServerStress(unittest.TestCase):
                 req = grequests.post(
                     self.base_url + '/v1/cache/' + cache_id,
                     files=files,
-                    headers={'Authorization': self.token}
+                    headers={'Authorization': 'non_admin_token'}
                 )
                 reqs.append(req)
             responses = grequests.map(reqs, exception_handler=exception_handler)
@@ -87,7 +86,7 @@ class TestServerStress(unittest.TestCase):
         for cache_id in cache_ids:
             req = grequests.delete(
                 self.base_url + '/v1/cache/' + cache_id,
-                headers={'Authorization': self.token}
+                headers={'Authorization': 'non_admin_token'}
             )
             reqs.append(req)
         responses = grequests.map(reqs, exception_handler=exception_handler)
@@ -102,7 +101,7 @@ class TestServerStress(unittest.TestCase):
         reqs = []
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': self.token
+            'Authorization': 'non_admin_token'
         }
         # Create a small test file for uploading
         with open('test.json', 'w+') as fwrite:
@@ -127,7 +126,7 @@ class TestServerStress(unittest.TestCase):
             req = grequests.post(
                 self.base_url + '/v1/cache/' + cid,
                 files={'file': file_obj},
-                headers={'Authorization': self.token}
+                headers={'Authorization': 'non_admin_token'}
             )
             reqs.append(req)
         responses = grequests.map(reqs, exception_handler=exception_handler)
