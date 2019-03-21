@@ -1,6 +1,6 @@
 import unittest
 
-from caching_service.generate_cache_id import generate_cache_id
+from src.caching_service.generate_cache_id import generate_cache_id
 
 
 class TestMinio(unittest.TestCase):

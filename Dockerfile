@@ -13,12 +13,13 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
     && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
     && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 
-COPY ./*requirements*.txt /app/
+COPY ./dev-requirements.txt  ./requirements.txt /tmp/
 WORKDIR /app
 
 # Install all the python dependencies
-RUN pip install -r requirements.txt && \
-    if [ "$DEVELOPMENT" ]; then pip install -r dev-requirements.txt; fi
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r /tmp/requirements.txt && \
+    if [ "$DEVELOPMENT" ]; then pip install --no-cache-dir -r /tmp/dev-requirements.txt; fi
 
 # Run the app
 COPY . /app

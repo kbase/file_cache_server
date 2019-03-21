@@ -9,7 +9,7 @@ Commands:
 
 from docopt import docopt
 
-from caching_service.minio import expire_entries
+from .minio import expire_entries
 
 
 if __name__ == '__main__':

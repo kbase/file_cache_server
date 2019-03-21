@@ -6,8 +6,9 @@ import os
 import io
 import shutil
 from werkzeug.utils import secure_filename
-from caching_service.config import Config
-import caching_service.exceptions as exceptions
+
+from .config import Config
+from . import exceptions
 
 
 # Initialize the Minio client object using the app's configuration

@@ -218,30 +218,18 @@ else:
 
 ## Development & deployment
 
-### Production deployment
-
-Copy `.env.production.example` into `.env` and set up some secure secret keys.
-
 ### Development and tests
 
-Copy `.env.development.example` into `.env` and run the following
+Start the server with
 
 ```sh
-$ make dev-server
+docker-compose up
 ```
 
-To rebuild the web server (eg. after adding a new dependency), run:
+Once the servers are up and running, run the tests in another terminal:
 
 ```sh
-$ make dev-build
-```
-
-Note that you must set the env var `DEVELOPMENT` in order to get the python dev requirements to install, which are required for running tests.
-
-Once the servers are up and running, you can run tests in another terminal:
-
-```sh
-$ make test
+make test
 ```
 
 ### Bucket setup
@@ -257,7 +245,7 @@ You can also call `docker-compose run mc` to access the Minio CLI for your runni
 To delete an entire non-empty bucket, run:
 
 ```sh
-$ docker-compose run mc rm -r --force /data/kbase-cache
+docker-compose run mc rm -r --force /data/kbase-cache
 ```
 
 Restart the server afterwards to re-create the bucket.
@@ -267,13 +255,13 @@ Restart the server afterwards to re-create the bucket.
 Run the admin CLI with:
 
 ```
-$ docker-compose run web python admin.py
+docker-compose run web python -m src.caching_service.admin
 ```
 
 Delete all expired cache entries with:
 
 ```
-$ docker-compose run web python admin.py expire_all
+docker-compose run web python -m src.caching_service.admin expire_all
 ```
 
 #### Stress tests
@@ -281,7 +269,7 @@ $ docker-compose run web python admin.py expire_all
 There is a test class for stress-testing the server in `test/test_server_stress.py`. Run it with:
 
 ```sh
-$ make stress_test
+make stress-test
 ```
 
 These tests will:
@@ -299,13 +287,13 @@ These tests will:
 
 ### Project anatomy
 
-* `app.py` is the main entrypoint for running the flask server
-* `/caching_service/` is the main package directory
-* `/caching_service/minio.py` contains utils for uploading, checking, and fetching files with Minio
-* `/caching_service/cache_id/` contains utils for generating cache IDs from tokens/params
-* `/caching_service/api` holds all the routes for each api version
-* `/caching_service/hash.py` is a utility wrapping pynacl (which uses libsodium) to do blake2b hashing
-* `/caching_service/authorization/` contains utilites for authorization using KBase's auth service
+* `/src/caching_service/` is the main package directory
+* `/src/caching_service/server.py` is the main entrypoint for running the flask server
+* `/src/caching_service/minio.py` contains utils for uploading, checking, and fetching files with Minio
+* `/src/caching_service/generate_cache_id.py` contains utils for generating cache IDs from tokens/params
+* `/src/caching_service/api` holds all the routes for each api version
+* `/src/caching_service/hash.py` is a utility for blake2b hashing
+* `/src/caching_service/authorization/` contains utilites for authorization using KBase's auth service
 
 This app uses Flask blueprints to create separate routes for each API version.
 
@@ -313,11 +301,10 @@ _Dependencies:_
 
 This project makes heavy use of [Minio](https://docs.minio.io/) using the Python Minio client.
 
-* `pip-requirements.txt` lists all pip requirements for running the server in all environments
-* `pip-requirements-dev.txt` lists all pip requirements for running the server in the development environment
-* `conda-requirements.txt` lists all conda requirements for running the server in all environments
+* `requirements.txt` lists all pip requirements for running the server in all environments
+* `dev-requirements.txt` lists all pip requirements for running the server in the development environment
 
-If you install any new dependencies, be sure to re-run `DEVELOPMENT=1 docker-compose up --build`.
+If you install any new dependencies, be sure to re-run `docker-compose build --no-cache`.
 
 Docker:
 
