@@ -3,18 +3,15 @@ Simple integration tests on the API itself.
 
 We make actual ajax requests to the running docker container.
 """
-
-import os
 import unittest
 import requests
 from uuid import uuid4
 import functools
 from minio.error import NoSuchKey
 
-import caching_service.minio as minio
+import src.caching_service.minio as minio
 
 url = 'http://web:5000/v1'
-auth = os.environ['KB_SERVICE_TOKEN']
 
 
 @functools.lru_cache()
@@ -23,7 +20,7 @@ def get_cache_id(cache_params=None):
         cache_params = '{"xyz":123}'
     resp = requests.post(
         url + '/cache_id',
-        headers={'Authorization': auth, 'Content-Type': 'application/json'},
+        headers={'Authorization': 'non_admin_token', 'Content-Type': 'application/json'},
         data=cache_params
     )
     print('-' * 80)
@@ -41,7 +38,7 @@ def upload_cache(cache_params=None, content=None):
         content = b'{"hallo": "welt"}'
     requests.post(
         url + '/cache/' + cache_id,
-        headers={'Authorization': auth},
+        headers={'Authorization': 'non_admin_token'},
         files={'file': ('test.json', content)}
     )
     return (cache_id, content)
@@ -80,7 +77,7 @@ class TestApiV1(unittest.TestCase):
             {'method': 'DELETE', 'url': url + '/cache/example'}
         ]
         for req_data in endpoints:
-            resp = requests.post(req_data['url'], headers={'Authorization': auth + 'x'})
+            resp = requests.post(req_data['url'], headers={'Authorization': 'invalid_token'})
             json = resp.json()
             self.assertEqual(resp.status_code, 403, 'Status code is 403')
             self.assertEqual(json['status'], 'error', 'Status is set to "error"')
@@ -94,7 +91,7 @@ class TestApiV1(unittest.TestCase):
         """
         resp = requests.post(
             url + '/cache_id',
-            headers={'Authorization': auth, 'Content-Type': 'application/json'},
+            headers={'Authorization': 'non_admin_token', 'Content-Type': 'application/json'},
             data='{"xyz": 123}'
         )
         json = resp.json()
@@ -110,7 +107,7 @@ class TestApiV1(unittest.TestCase):
         """
         resp = requests.post(
             url + '/cache_id',
-            headers={'Authorization': auth, 'Content-Type': 'application/json'},
+            headers={'Authorization': 'non_admin_token', 'Content-Type': 'application/json'},
             data='{{{{(((('
         )
         json = resp.json()
@@ -126,7 +123,7 @@ class TestApiV1(unittest.TestCase):
         """
         resp = requests.post(
             url + '/cache_id',
-            headers={'Authorization': auth + 'x', 'Content-Type': 'application/json'},
+            headers={'Authorization': 'invalid_token', 'Content-Type': 'application/json'},
             data='{"xyz": 123}'
         )
         json = resp.json()
@@ -142,7 +139,7 @@ class TestApiV1(unittest.TestCase):
         """
         resp = requests.post(
             url + '/cache_id',
-            headers={'Authorization': auth, 'Content-Type': 'multipart/form-data'},
+            headers={'Authorization': 'non_admin_token', 'Content-Type': 'multipart/form-data'},
             data='{"xyz": 123}'
         )
         json = resp.json()
@@ -158,7 +155,7 @@ class TestApiV1(unittest.TestCase):
         """
         resp = requests.post(
             url + '/cache_id',
-            headers={'Authorization': auth},
+            headers={'Authorization': 'non_admin_token'},
             data='{"xyz": 123}'
         )
         json = resp.json()
@@ -174,7 +171,7 @@ class TestApiV1(unittest.TestCase):
         """
         resp = requests.post(
             url + '/cache_id',
-            headers={'Authorization': auth, 'Content-Type': 'application/json'}
+            headers={'Authorization': 'non_admin_token', 'Content-Type': 'application/json'}
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 400, 'Status code is 400')
@@ -190,7 +187,7 @@ class TestApiV1(unittest.TestCase):
         (cache_id, content) = upload_cache()
         resp = requests.get(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth}
+            headers={'Authorization': 'non_admin_token'}
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, content)
@@ -205,7 +202,7 @@ class TestApiV1(unittest.TestCase):
         minio.create_placeholder(cache_id, 'test_user')
         resp = requests.get(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth}
+            headers={'Authorization': 'non_admin_token'}
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 403, 'Status code is 403')
@@ -221,7 +218,7 @@ class TestApiV1(unittest.TestCase):
         cache_id = str(uuid4())
         resp = requests.get(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth}
+            headers={'Authorization': 'non_admin_token'}
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 404)
@@ -238,7 +235,7 @@ class TestApiV1(unittest.TestCase):
         content = b'{"hallo": "welt"}'
         resp = requests.post(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth},
+            headers={'Authorization': 'non_admin_token'},
             files={'file': ('test.json', content)}
         )
         json = resp.json()
@@ -255,7 +252,7 @@ class TestApiV1(unittest.TestCase):
         minio.create_placeholder(cache_id, 'test_user')
         resp = requests.post(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth},
+            headers={'Authorization': 'non_admin_token'},
             files={'file': ('test.json', b'{"x": 1}')}
         )
         json = resp.json()
@@ -272,7 +269,7 @@ class TestApiV1(unittest.TestCase):
         cache_id = str(uuid4())
         resp = requests.post(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth},
+            headers={'Authorization': 'non_admin_token'},
             files={'file': ('test.json', b'{"x": 1}')}
         )
         json = resp.json()
@@ -289,7 +286,7 @@ class TestApiV1(unittest.TestCase):
         cache_id = get_cache_id()
         resp = requests.post(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth},
+            headers={'Authorization': 'non_admin_token'},
             files={'filexx': ('test.json', b'{"x": 1}')}
         )
         json = resp.json()
@@ -306,7 +303,7 @@ class TestApiV1(unittest.TestCase):
         cache_id = get_cache_id()
         resp = requests.delete(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth}
+            headers={'Authorization': 'non_admin_token'}
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 200, 'Status code is 200')
@@ -325,7 +322,7 @@ class TestApiV1(unittest.TestCase):
         minio.create_placeholder(cache_id, 'test_user')
         resp = requests.delete(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth}
+            headers={'Authorization': 'non_admin_token'}
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 403, 'Status code is 403')
@@ -341,7 +338,7 @@ class TestApiV1(unittest.TestCase):
         cache_id = str(uuid4())
         resp = requests.delete(
             url + '/cache/' + cache_id,
-            headers={'Authorization': auth}
+            headers={'Authorization': 'non_admin_token'}
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 404, 'Status code is 404')

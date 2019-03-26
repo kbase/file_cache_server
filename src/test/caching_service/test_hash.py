@@ -1,6 +1,7 @@
 import time
-from caching_service.hash import bhash
 import unittest
+
+from src.caching_service.hash import bhash
 
 
 class TestHash(unittest.TestCase):
