@@ -1,4 +1,4 @@
-# CachingService
+# KBase File Caching Server
 
 Generic file-caching service for the KBase platform, allowing you to save the results of long-running jobs so you don't have repeat them unnecessarily.
 
