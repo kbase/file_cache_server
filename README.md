@@ -2,6 +2,8 @@
 
 Generic file-caching service for the KBase platform, allowing you to save the results of long-running jobs so you don't have repeat them unnecessarily.
 
+> A python client to this server is available here: https://github.com/rroutsong/kbase_cache_client
+
 For example, you might want to run a preprocessing algorithm on some fasta files to make them searchable. You don't want to have to do the same preprocessing on those files over and over again, and instead want to fetch previous results that you've already generated. If your app uses this service, then you can save the file ouput of a job given certain parameters and fetch that same output later given the same parameters.
 
 It's important to note that this is only useful if the time it takes to generate a file is going to be longer than it takes to download the file from this service.
