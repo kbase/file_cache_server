@@ -14,7 +14,7 @@ services:
       - MINIO_SECRET_KEY=minio123
       - PYTHONUNBUFFERED=1
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     volumes:
       - .:/app
 
@@ -22,7 +22,7 @@ services:
   minio:
     image: minio/minio
     ports:
-      - "9000:9000"
+      - "127.0.0.1:9000:9000"
     environment:
       - MINIO_ACCESS_KEY=minio
       - MINIO_SECRET_KEY=minio123
