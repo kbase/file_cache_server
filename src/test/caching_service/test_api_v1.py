@@ -7,9 +7,9 @@ import unittest
 import requests
 from uuid import uuid4
 import functools
-from minio.error import NoSuchKey
 
 import src.caching_service.minio as minio
+from src.caching_service.exceptions import MissingCache
 
 url = 'http://web:5000/v1'
 
@@ -309,7 +309,7 @@ class TestApiV1(unittest.TestCase):
         self.assertEqual(resp.status_code, 200, 'Status code is 200')
         self.assertEqual(json['status'], 'ok', 'Status is "deleted"')
         # Test that the cache is inaccessible
-        with self.assertRaises(NoSuchKey):
+        with self.assertRaises(MissingCache):
             minio.get_metadata(cache_id)
 
     def test_delete_unauthorized_cache(self):
