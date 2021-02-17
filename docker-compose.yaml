@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
 
@@ -17,12 +17,15 @@ services:
       - "127.0.0.1:5000:5000"
     volumes:
       - .:/app
+    depends_on:
+      - minio
+      - auth
 
   # For running the file server
   minio:
     image: minio/minio
-    ports:
-      - "127.0.0.1:9000:9000"
+    expose:
+      - "9000"
     environment:
       - MINIO_ACCESS_KEY=minio
       - MINIO_SECRET_KEY=minio123

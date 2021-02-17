@@ -80,7 +80,6 @@ class TestApiV1(unittest.TestCase):
             resp = requests.post(req_data['url'], headers={'Authorization': 'invalid_token'})
             json = resp.json()
             self.assertEqual(resp.status_code, 403, 'Status code is 403')
-            print('json 83', json)
             self.assertEqual(json['status'], 'error', 'Status is set to "error"')
             self.assertTrue('Invalid token' in json['error'], 'Error message is set')
 
@@ -129,7 +128,6 @@ class TestApiV1(unittest.TestCase):
         )
         json = resp.json()
         self.assertEqual(resp.status_code, 403, 'Status code is 403')
-        print('json 132', json)
         self.assertEqual(json['status'], 'error', 'Status is set to "error"')
         self.assertTrue('Invalid token' in json['error'], 'Gives error message')
 

@@ -2,6 +2,7 @@
     "methods": [
       "GET"
     ],
+    "absent_headers": ["Authorization"],
     "path": "/api/V2/token",
     "response": {
       "status": "400",

@@ -4,6 +4,7 @@ import time
 import tempfile
 import os
 import io
+import requests
 import shutil
 from werkzeug.utils import secure_filename
 
@@ -20,14 +21,39 @@ minio_client = Minio(
 )
 bucket_name = Config.minio_bucket_name
 
-# Create the bucket if it does not exist
-try:
-    minio_client.make_bucket(bucket_name)
-except minio.error.S3Error as err:
-    # Acceptable errors
-    errs = ["BucketAlreadyExists", "BucketAlreadyOwnedByYou"]
-    if err.code not in errs:
-        raise err
+
+def initialize_bucket():
+    """
+    Create the default bucket if it does not exist
+    """
+    try:
+        print('making bucket', bucket_name)
+        minio_client.make_bucket(bucket_name)
+        print('done making bucket', bucket_name)
+    except minio.error.S3Error as err:
+        # Acceptable errors
+        errs = ["BucketAlreadyExists", "BucketAlreadyOwnedByYou"]
+        if err.code not in errs:
+            raise err
+
+
+def wait_for_service():
+    """
+    Wait for the minio service to be healthy
+    """
+    url = f'http://{Config.minio_host}/minio/health/live'
+    max_time = 180
+    start = time.time()
+    while True:
+        try:
+            requests.get(url).raise_for_status()
+            print("Minio is healthy! Continuing.")
+            break
+        except Exception as err:
+            if time.time() > start + max_time:
+                raise RuntimeError("Timed out waiting for Minio")
+            print(f"Still waiting for Minio at {url} to be healthy:")
+            print(err)
 
 
 def create_placeholder(cache_id, token_id):
