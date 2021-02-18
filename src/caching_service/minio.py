@@ -27,9 +27,9 @@ def initialize_bucket():
     Create the default bucket if it does not exist
     """
     try:
-        print('making bucket', bucket_name)
+        print(f"Making bucket with name '{bucket_name}'")
         minio_client.make_bucket(bucket_name)
-        print('done making bucket', bucket_name)
+        print(f"Done making bucket '{bucket_name}'")
     except minio.error.S3Error as err:
         # Acceptable errors
         errs = ["BucketAlreadyExists", "BucketAlreadyOwnedByYou"]
