@@ -9,11 +9,11 @@ from .api.api_v1 import api_v1
 from .exceptions import MissingHeader, InvalidContentType, UnauthorizedAccess
 from .config import Config
 
+# Initialize the server
 app = flask.Flask(__name__)
 app.config['DEBUG'] = os.environ.get('DEVELOPMENT')
 app.config['SECRET_KEY'] = Config.secret_key
 app.url_map.strict_slashes = False  # allow both `get /v1/` and `get /v1`
-
 app.register_blueprint(api_v1, url_prefix='/v1')
 
 

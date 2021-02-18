@@ -1,0 +1,18 @@
+{
+    "methods": [ "GET" ],
+    "path": "/api/V2/token",
+    "headers": { "Authorization": "non_admin_token" },
+    "response": {
+      "status": "200",
+      "body": {
+        "type": "Developer",
+        "id": "xyz-abc-123",
+        "expires": 1556479867969,
+        "created": 1548703867969,
+        "name": "token_name",
+        "user": "username",
+        "custom": {},
+        "cachefor": 300000
+      }
+    }
+}
