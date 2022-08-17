@@ -173,7 +173,7 @@ def get_metadata(cache_id):
     # The below keys are how metadata gets stored in minio files for 'expiration', 'filename', etc
     # For example if you set the metadata 'xyz_abc', then minio will store it as 'X-Amz-Meta-Xyz_abc'
     return {
-        'expiration': orig_metadata['X-Amz-Meta-Expiration'],
+        'expiration': orig_metadata['x-amz-meta-expiration'],
         'filename': orig_metadata['X-Amz-Meta-Filename'],
         'token_id': orig_metadata['X-Amz-Meta-Token_id']
     }
