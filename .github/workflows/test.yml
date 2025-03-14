@@ -1,0 +1,41 @@
+name: KBase File Cache Server test
+
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    - ready_for_review
+  push:
+    # run workflow when merging to main or develop
+    branches:
+      - main
+      - master
+      - develop
+
+jobs:
+  file_cache_server_tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repo checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.7.17
+
+      - name: Run tests
+        shell: bash
+        run: |
+          docker compose up -d
+          sleep 10
+          make test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
