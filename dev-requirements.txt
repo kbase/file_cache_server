@@ -1,6 +1,6 @@
 mypy==0.800
 bandit==1.7.0
-mccabe==0.6.1
-flake8==3.8.4
+mccabe==0.7.0
+flake8==5.0.4
 grequests==0.6.0
 coverage==5.4
