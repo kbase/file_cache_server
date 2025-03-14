@@ -1,7 +1,7 @@
 .PHONY: test stress-test
 
 test:
-	docker-compose run web sh scripts/run_tests.sh
+	docker compose run web sh scripts/run_tests.sh
 
 stress-test:
-	docker-compose run web sh -c "python -m unittest src/test/test_server_stress.py"
+	docker compose run web sh -c "python -m unittest src/test/test_server_stress.py"
