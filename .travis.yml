@@ -1,7 +1,0 @@
-sudo: required
-services:
-- docker
-script:
-- docker-compose up -d
-- sleep 10
-- make test
