@@ -1,4 +1,4 @@
-mypy==0.800
+mypy==1.15.0
 bandit==1.7.0
 mccabe==0.7.0
 flake8==5.0.4
