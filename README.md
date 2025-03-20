@@ -1,5 +1,8 @@
 # KBase File Caching Server
 
+# CodeCov Badge
+* [![codecov](https://codecov.io/gh/kbase/file_cache_server/graph/badge.svg?token=ckvzaIyVkt)](https://codecov.io/gh/kbase/file_cache_server)
+
 Generic file-caching service for the KBase platform, allowing you to save the results of long-running jobs so you don't have repeat them unnecessarily.
 
 > A python client to this server is available here: https://github.com/rroutsong/kbase_cache_client
