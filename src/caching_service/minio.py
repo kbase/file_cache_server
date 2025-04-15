@@ -4,6 +4,7 @@ import time
 import tempfile
 import os
 import io
+import requests
 import shutil
 from werkzeug.utils import secure_filename
 
@@ -20,13 +21,39 @@ minio_client = Minio(
 )
 bucket_name = Config.minio_bucket_name
 
-# Create the bucket if it does not exist
-try:
-    minio_client.make_bucket(bucket_name)
-except minio.error.BucketAlreadyExists:
-    pass
-except minio.error.BucketAlreadyOwnedByYou:
-    pass
+
+def initialize_bucket():
+    """
+    Create the default bucket if it does not exist
+    """
+    print(f"Making bucket with name '{bucket_name}'")
+    try:
+        minio_client.make_bucket(bucket_name)
+    except minio.error.S3Error as err:
+        # Acceptable errors
+        errs = ["BucketAlreadyExists", "BucketAlreadyOwnedByYou"]
+        if err.code not in errs:
+            raise err
+    print(f"Done making bucket '{bucket_name}'")
+
+
+def wait_for_service():
+    """
+    Wait for the minio service to be healthy
+    """
+    url = f'http://{Config.minio_host}/minio/health/live'
+    max_time = 180
+    start = time.time()
+    while True:
+        try:
+            requests.get(url).raise_for_status()
+            print("Minio is healthy! Continuing.")
+            break
+        except Exception as err:
+            if time.time() > start + max_time:
+                raise RuntimeError("Timed out waiting for Minio")
+            print(f"Still waiting for Minio at {url} to be healthy:")
+            print(err)
 
 
 def create_placeholder(cache_id, token_id):
@@ -46,7 +73,8 @@ def create_placeholder(cache_id, token_id):
     """
     try:
         return get_metadata(cache_id)
-    except minio.error.NoSuchKey:
+    except exceptions.MissingCache:
+        # Create the cache key
         seven_days = 604800  # in seconds
         expiration = str(int(time.time() + seven_days))
         metadata = {
@@ -63,8 +91,9 @@ def authorize_access(cache_id, token_id):
     """
     Given a cache ID and token ID, authorize that the token has permission to access the cache.
 
-    This will raise caching_service.exceptions.UnauthorizedAccess if it is unauthorized.
-    This will raise minio.error.NoSuchKey if the cache ID does not exist.
+    Raises:
+        - caching_service.exceptions.UnauthorizedAccess if it is unauthorized.
+        - exceptions.MissingCache if the cache ID does not exist.
     """
     metadata = get_metadata(cache_id)
     existing_token_id = metadata['token_id']
@@ -105,7 +134,7 @@ def expire_entries():
     """
     print('Checking the expiration of all stored objects..')
     now = time.time()
-    objects = minio_client.list_objects_v2(bucket_name)
+    objects = minio_client.list_objects(bucket_name)
     removed_count = 0
     total_count = 0
     for obj in objects:
@@ -134,7 +163,13 @@ def delete_cache(cache_id, token_id):
 
 def get_metadata(cache_id):
     """Return the Minio metadata dict for a cache file."""
-    orig_metadata = minio_client.stat_object(bucket_name, cache_id).metadata
+    try:
+        orig_metadata = minio_client.stat_object(bucket_name, cache_id).metadata
+    except minio.error.S3Error as err:
+        # Catch NoSuchKey errors and raise MissingCache
+        if err.code != "NoSuchKey":
+            raise err
+        raise exceptions.MissingCache(cache_id)
     # The below keys are how metadata gets stored in minio files for 'expiration', 'filename', etc
     # For example if you set the metadata 'xyz_abc', then minio will store it as 'X-Amz-Meta-Xyz_abc'
     return {

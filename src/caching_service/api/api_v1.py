@@ -2,7 +2,6 @@
 import tempfile
 import json
 import flask
-import minio.error
 import shutil
 
 from ..authorization.service_token import requires_service_token
@@ -88,7 +87,6 @@ def delete(cache_id):
 # --------------
 
 @api_v1.errorhandler(exceptions.MissingCache)
-@api_v1.errorhandler(minio.error.NoSuchKey)
 def missing_cache_file(err):
     """A cache ID was not found, but was expected to exist."""
     result = {'status': 'error', 'error': 'Cache ID not found'}

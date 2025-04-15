@@ -4,7 +4,6 @@ import time
 import os
 import io
 from werkzeug.datastructures import FileStorage
-from minio.error import NoSuchKey
 from uuid import uuid4
 import tempfile
 
@@ -73,7 +72,7 @@ class TestMinio(unittest.TestCase):
         minio.create_placeholder(cache_id, token_id)
         minio.delete_cache(cache_id, token_id)
         tmp_dir = tempfile.mkdtemp()
-        with self.assertRaises(NoSuchKey):
+        with self.assertRaises(exceptions.MissingCache):
             minio.download_cache(cache_id, token_id, tmp_dir)
         shutil.rmtree(tmp_dir)
 
@@ -103,7 +102,7 @@ class TestMinio(unittest.TestCase):
         cache_id = str(uuid4())
         file_storage = self.make_test_file_storage(cache_id, token_id)
         minio.create_placeholder(cache_id, token_id)
-        with self.assertRaises(NoSuchKey):
+        with self.assertRaises(exceptions.MissingCache):
             minio.upload_cache(cache_id + 'x', token_id, file_storage)
         file_storage.stream.close()
 
@@ -113,7 +112,7 @@ class TestMinio(unittest.TestCase):
         cache_id = str(uuid4())
         minio.create_placeholder(cache_id, token_id)
         tmp_dir = tempfile.mkdtemp()
-        with self.assertRaises(NoSuchKey):
+        with self.assertRaises(exceptions.MissingCache):
             minio.download_cache(cache_id + 'x', token_id, tmp_dir)
         shutil.rmtree(tmp_dir)
 
