@@ -1,4 +1,4 @@
-minio==7.0.2
+minio==7.2.20
 flask==2.0.3
 gunicorn==20.0.4
 gevent==21.1.2
